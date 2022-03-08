@@ -1,4 +1,4 @@
-FROM ubuntu:19.10
+FROM debian:buster-slim
 LABEL maintainer="Marcus Klein <himself@kleini.org>"
 
 ARG BUILD_DATE
@@ -12,52 +12,56 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
     org.label-schema.vcs-type="Git" \
     org.label-schema.vcs-url="https://github.com/ccrisan/motioneye.git"
 
+# By default, run as root.
+ARG RUN_UID=0
+ARG RUN_GID=0
+
 COPY . /tmp/motioneye
 
-RUN apt-get update && \
-    apt-get upgrade --yes && \
-    DEBIAN_FRONTEND="noninteractive" apt-get --yes --option Dpkg::Options::="--force-confnew" --no-install-recommends install \
-    curl \
-    ffmpeg \
-    libmicrohttpd12 \
-    libmysqlclient21 \
-    libpq5 \
-    lsb-release \
-    mosquitto-clients \
-    motion \
-    python3-jinja2 \
-    python3-pil \
-    python3-pip \
-    python3-pycurl \
-    python3-setuptools \
-    python3-six \
-    python3-tornado \
-    python3-tz \
-    python3-wheel \
-    tzdata \
-    v4l-utils && \
+RUN echo "deb http://snapshot.debian.org/archive/debian/$(date +%Y%m%d) buster contrib non-free" >>/etc/apt/sources.list && \
+    apt-get update && \
+    DEBIAN_FRONTEND="noninteractive" apt-get -t buster --yes --option Dpkg::Options::="--force-confnew" --no-install-recommends install \
+      curl \
+      ffmpeg \
+      libmicrohttpd12 \
+      libpq5 \
+      lsb-release \
+      mosquitto-clients \
+      python3-jinja2 \
+      python3-pil \
+      python3-pip \
+      python3-pycurl \
+      python3-setuptools \
+      python3-six \
+      python3-tornado \
+      python3-tz \
+      python3-wheel \
+      v4l-utils \
+      motion \
+      default-libmysqlclient-dev && \
+    # Change uid/gid of user/group motion to match our desired IDs.  This will
+    # make it easier to use execute motion as our desired user later.
+    sed -i -e "s/^\(motion:[^:]*\):[0-9]*:[0-9]*:\(.*\)/\1:${RUN_UID}:${RUN_GID}:\2/" /etc/passwd && \
+    sed -i -e "s/^\(motion:[^:]*\):[0-9]*:\(.*\)/\1:${RUN_GID}:\2/" /etc/group && \
     pip3 install /tmp/motioneye && \
+    # Cleanup
     rm -rf /tmp/motioneye && \
-    apt-get purge --yes \
-    python3-pip \
-    python3-setuptools \
-    python3-wheel && \
+    apt-get purge --yes python3-pip python3-setuptools python3-wheel && \
     apt-get autoremove --yes && \
     apt-get --yes clean && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
+
+ADD extra/motioneye.conf.sample /usr/share/motioneye/extra/
 
 # R/W needed for motioneye to update configurations
 VOLUME /etc/motioneye
 
-# PIDs
-VOLUME /var/run/motion
-
 # Video & images
 VOLUME /var/lib/motioneye
 
-ADD extra/motioneye.conf.sample /usr/share/motioneye/extra/
-
-CMD test -e /etc/motioneye/motioneye.conf || \    
+CMD test -e /etc/motioneye/motioneye.conf || \
     cp /usr/share/motioneye/extra/motioneye.conf.sample /etc/motioneye/motioneye.conf ; \
-    /usr/local/bin/meyectl startserver -c /etc/motioneye/motioneye.conf
+    # We need to chown at startup time since volumes are mounted as root. This is fugly.
+    chown motion:motion /var/run /var/log /etc/motioneye /var/lib/motioneye /usr/share/motioneye/extra ; \
+    su -g motion motion -s /bin/bash -c "/usr/local/bin/meyectl startserver -c /etc/motioneye/motioneye.conf"
 
 EXPOSE 8765

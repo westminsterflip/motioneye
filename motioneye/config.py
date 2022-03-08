@@ -64,6 +64,7 @@ _USED_MOTION_OPTIONS = {
     'locate_motion_mode',
     'locate_motion_style',
     'mask_file',
+    'mask_privacy',
     'movie_codec',
     'movie_filename',
     'movie_max_time',
@@ -700,6 +701,7 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
         'auto_brightness': ui['auto_brightness'],
         'framerate': int(ui['framerate']),
         'rotate': int(ui['rotation']),
+        'mask_privacy': '',
 
         # file storage
         '@storage_device': ui['storage_device'],
@@ -826,6 +828,14 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     data['threshold'] = threshold
 
 
+    if ui['privacy_mask']:
+        capture_width, capture_height = data.get('width'), data.get('height')
+        if data.get('rotate') in [90, 270]:
+            capture_width, capture_height = capture_height, capture_width
+
+        data['mask_privacy'] = utils.build_editable_mask_file(prev_config['@id'], 'privacy', ui['privacy_mask_lines'],
+                                                            capture_width, capture_height)
+
     if (ui['storage_device'] == 'network-share') and settings.SMB_SHARES:
         mount_point = smbctl.make_mount_point(ui['network_server'], ui['network_share_name'], ui['network_username'])
         if ui['root_directory'].startswith('/'):
@@ -934,16 +944,16 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     else:
         data['despeckle_filter'] = ''
 
-    if ui['mask']:
-        if ui['mask_type'] == 'smart':
-            data['smart_mask_speed'] = 10 - int(ui['smart_mask_sluggishness'])
+    if ui['motion_mask']:
+        if ui['motion_mask_type'] == 'smart':
+            data['smart_mask_speed'] = 11 - int(ui['smart_mask_sluggishness'])
 
-        elif ui['mask_type'] == 'editable':
+        elif ui['motion_mask_type'] == 'editable':
             capture_width, capture_height = data.get('width'), data.get('height')
             if data.get('rotate') in [90, 270]:
                 capture_width, capture_height = capture_height, capture_width
 
-            data['mask_file'] = utils.build_editable_mask_file(prev_config['@id'], ui['mask_lines'],
+            data['mask_file'] = utils.build_editable_mask_file(prev_config['@id'], 'motion', ui['motion_mask_lines'],
                                                                capture_width, capture_height)
 
     # working schedule
@@ -993,6 +1003,16 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
 
     # event end
     on_event_end = ['%(script)s stop %%t' % {'script': meyectl.find_command('relayevent')}]
+
+    if ui['telegram_notifications_enabled']:
+        line = "%(script)s '%(api)s' '%(chatid)s' " \
+               "'motion_start' '%%t' '%%Y-%%m-%%dT%%H:%%M:%%S' '%(timespan)s'" % {
+                   'script': meyectl.find_command('sendtelegram'),
+                   'api': ui['telegram_notifications_api'],
+                   'chatid': ui['telegram_notifications_chat_id'],
+                   'timespan': ui['telegram_notifications_picture_time_span']}
+
+        on_event_end.append(line)
 
     if ui['command_end_notifications_enabled']:
         on_event_end += utils.split_semicolon(ui['command_end_notifications_exec'])
@@ -1063,6 +1083,8 @@ def motion_camera_dict_to_ui(data):
         'auto_brightness': data['auto_brightness'],
         'framerate': int(data['framerate']),
         'rotation': int(data['rotate']),
+        'privacy_mask': False,
+        'privacy_mask_lines': [],
 
         # file storage
         'smb_shares': settings.SMB_SHARES,
@@ -1138,14 +1160,15 @@ def motion_camera_dict_to_ui(data):
         'pre_capture': int(data['pre_capture']),
         'post_capture': int(data['post_capture']),
         'minimum_motion_frames': int(data['minimum_motion_frames']),
-        'mask': False,
-        'mask_type': 'smart',
+        'motion_mask': False,
+        'motion_mask_type': 'smart',
         'smart_mask_sluggishness': 5,
-        'mask_lines': [],
+        'motion_mask_lines': [],
         'create_debug_media': data['movie_output_motion'] or data['picture_output_motion'],
 
         # motion notifications
         'email_notifications_enabled': False,
+        'telegram_notifications_enabled': False,
         'web_hook_notifications_enabled': False,
         'command_notifications_enabled': False,
         'command_end_notifications_enabled': False,
@@ -1340,21 +1363,30 @@ def motion_camera_dict_to_ui(data):
     ui['movie_format'] = data['movie_codec']
     ui['movie_quality'] = data['movie_quality']
 
-    # mask
+    # masks
     if data['mask_file']:
-        ui['mask'] = True
-        ui['mask_type'] = 'editable'
+        ui['motion_mask'] = True
+        ui['motion_mask_type'] = 'editable'
 
         capture_width, capture_height = data.get('width'), data.get('height')
         if int(data.get('rotate')) in [90, 270]:
             capture_width, capture_height = capture_height, capture_width
 
-        ui['mask_lines'] = utils.parse_editable_mask_file(data['@id'], capture_width, capture_height)
+        ui['motion_mask_lines'] = utils.parse_editable_mask_file(data['@id'], 'motion', capture_width, capture_height)
 
     elif data['smart_mask_speed']:
-        ui['mask'] = True
-        ui['mask_type'] = 'smart'
-        ui['smart_mask_sluggishness'] = 10 - data['smart_mask_speed']
+        ui['motion_mask'] = True
+        ui['motion_mask_type'] = 'smart'
+        ui['smart_mask_sluggishness'] = 11 - data['smart_mask_speed']
+
+    if data['mask_privacy']:
+        ui['privacy_mask'] = True
+
+        capture_width, capture_height = data.get('width'), data.get('height')
+        if int(data.get('rotate')) in [90, 270]:
+            capture_width, capture_height = capture_height, capture_width
+
+        ui['privacy_mask_lines'] = utils.parse_editable_mask_file(data['@id'], 'privacy', capture_width, capture_height)
 
     # working schedule
     working_schedule = data['@working_schedule']
@@ -1376,6 +1408,7 @@ def motion_camera_dict_to_ui(data):
         on_event_start = utils.split_semicolon(on_event_start)
 
     ui['email_notifications_picture_time_span'] = 0
+    ui['telegram_notifications_picture_time_span'] = 0
     command_notifications = []
     for e in on_event_start:
         if e.count(' sendmail '):
@@ -1401,6 +1434,21 @@ def motion_camera_dict_to_ui(data):
 
             except ValueError:
                 ui['email_notifications_picture_time_span'] = 0
+
+        elif e.count(' sendtelegram '):
+            e = shlex.split(utils.make_str(e)) # poor shlex can't deal with unicode properly
+
+            if len(e) < 7:
+                continue
+
+            ui['telegram_notifications_enabled'] = True
+            ui['telegram_notifications_api'] = e[-6]
+            ui['telegram_notifications_chat_id'] = e[-5]
+            try:
+                ui['telegram_notifications_picture_time_span'] = int(e[-1])
+
+            except:
+                ui['telegram_notifications_picture_time_span'] = 0
 
         elif e.count(' webhook '):
             e = shlex.split(utils.make_str(e)) # poor shlex can't deal with unicode properly
@@ -1859,6 +1907,7 @@ def _set_default_motion_camera(camera_id, data):
     data.setdefault('auto_brightness', False)
     data.setdefault('framerate', 2)
     data.setdefault('rotate', 0)
+    data.setdefault('mask_privacy', '')
 
     data.setdefault('@storage_device', 'custom-path')
     data.setdefault('@network_server', '')

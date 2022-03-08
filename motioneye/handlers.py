@@ -249,6 +249,12 @@ class MainHandler(BaseHandler):
                     admin_username=config.get_main().get('@admin_username'),
                     has_h264_omx_support=motionctl.has_h264_omx_support(),
                     has_h264_v4l2m2m_support=motionctl.has_h264_v4l2m2m_support(),
+                    has_h264_nvenc_support=motionctl.has_h264_nvenc_support(),
+                    has_h264_nvmpi_support=motionctl.has_h264_nvmpi_support(),
+                    has_hevc_nvenc_support=motionctl.has_hevc_nvenc_support(),
+                    has_hevc_nvmpi_support=motionctl.has_hevc_nvmpi_support(),
+                    has_h264_qsv_support=motionctl.has_h264_qsv_support(),
+                    has_hevc_qsv_support=motionctl.has_hevc_qsv_support(),
                     has_motion=bool(motionctl.find_motion()[0]),
                     mask_width=utils.MASK_WIDTH)
 
@@ -857,6 +863,26 @@ class ConfigHandler(BaseHandler):
                         msg = 'check SMTP port'
 
                     logging.error('notification email test failed: %s' % msg, exc_info=True)
+                    self.finish_json({'error': str(msg)})
+
+            elif what == 'telegram':
+                import sendtelegram
+
+                logging.debug('testing telegram notification')
+
+                try:
+                    message = 'This is a test of motionEye\'s telegram messaging'
+                    sendtelegram.send_message(data['api'], int(data['chatid']), message=message, files=[])
+
+                    self.finish_json()
+
+                    logging.debug('telegram notification test succeeded')
+
+                except Exception as e:
+                    msg = str(e)
+
+                    msg_lower = msg.lower()
+                    logging.error('telegram notification test failed: %s' % msg, exc_info=True)
                     self.finish_json({'error': str(msg)})
 
             elif what == 'network_share':

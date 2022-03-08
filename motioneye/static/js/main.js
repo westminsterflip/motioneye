@@ -18,9 +18,10 @@ var passwordHash = '';
 var basePath = null;
 var signatureRegExp = new RegExp('[^A-Za-z0-9/?_.=&{}\\[\\]":, -]', 'g');
 var deviceNameValidRegExp = new RegExp('^[A-Za-z0-9\-\_\+\ ]+$');
-var filenameValidRegExp = new RegExp('^([A-Za-z0-9 \(\)/._-]|%[YmdHMSqv])+$');
+var filenameValidRegExp = new RegExp('^([A-Za-z0-9 \(\)/._-]|%[CYmdHMSqv])+$');
 var dirnameValidRegExp = new RegExp('^[A-Za-z0-9 \(\)/._-]+$');
 var emailValidRegExp = new RegExp('^[A-Za-z0-9 _+.@^~<>,-]+$');
+var webHookUrlValidRegExp = new RegExp('^[^;\']+$');
 var initialConfigFetched = false; /* used to workaround browser extensions that trigger stupid change events */
 var pageContainer = null;
 var overlayVisible = false;
@@ -621,7 +622,7 @@ function initUI() {
     }, '');
     makeCustomValidator($('#emailFromEntry'), function (value) {
         if (value && !value.match(emailValidRegExp)) {
-            return 'enter a vaild email address';
+            return 'enter a valid email address';
         }
 
         return true;
@@ -636,6 +637,13 @@ function initUI() {
     makeCustomValidator($('#imageFileNameEntry, #movieFileNameEntry'), function (value) {
         if (!value.match(filenameValidRegExp)) {
             return "special characters are not allowed in file name";
+        }
+
+        return true;
+    }, '');
+    makeCustomValidator($('#webHookNotificationsUrlEntry'), function (value) {
+        if (!value.match(webHookUrlValidRegExp)) {
+            return "use of semicolon (;) or single quote (\') is not allowed in web hook URL";
         }
 
         return true;
@@ -895,25 +903,23 @@ function initUI() {
                     '", not just those created by motionEye!'));
         }
     });
-
-    /* disable mask editor when mask gets disabled */
-    $('#maskSwitch').change(function () {
+    
+    /* disable corresponding mask editor when the mask gets disabled */
+    $('#motionMaskSwitch').change(function () {
        if (!this.checked) {
-           disableMaskEdit();
-       }
+            disableMaskEdit('motion');
+       } 
     });
-
-    /* disable mask editor when mask gets disabled */
-    $('#maskSwitch').change(function () {
-       if (!this.checked) {
-           disableMaskEdit();
-       }
-    });
-
-    /* disable mask editor when mask type is no longer editable */
-    $('#maskTypeSelect').change(function () {
+    $('#privacyMaskSwitch').change(function () {
+        if (!this.checked) {
+             disableMaskEdit('privacy');
+        } 
+     });
+     
+    /* disable motion detection mask editor when mask type is no longer editable */
+    $('#motionMaskTypeSelect').change(function () {
         if ($(this).val() != 'editable') {
-            disableMaskEdit();
+            disableMaskEdit('motion');
         }
     });
 
@@ -952,22 +958,24 @@ function initUI() {
     /* test buttons */
     $('div#uploadTestButton').click(doTestUpload);
     $('div#emailTestButton').click(doTestEmail);
+    $('div#telegramTestButton').click(doTestTelegram);
     $('div#networkShareTestButton').click(doTestNetworkShare);
 
     /* mask editor buttons */
-    $('div#editMaskButton').click(function () {
+    $('div#motionMaskEditButton, div#privacyMaskEditButton').click(function (event) {
         var cameraId = $('#cameraSelect').val();
         var img = getCameraFrame(cameraId).find('img.camera')[0];
         if (!img._naturalWidth || !img._naturalHeight) {
             return runAlertDialog('Cannot edit the mask without a valid camera image!');
         }
 
-        enableMaskEdit(cameraId, img._naturalWidth, img._naturalHeight);
+        var maskClass = event.target.id.substring(0, event.target.id.indexOf('MaskEditButton'));
+        enableMaskEdit(cameraId, maskClass, img._naturalWidth, img._naturalHeight);
     });
-    $('div#saveMaskButton').click(function () {
+    $('div#motionMaskSaveButton, div#privacyMaskSaveButton').click(function () {
         disableMaskEdit();
     });
-    $('div#clearMaskButton').click(function () {
+    $('div#motionMaskClearButton, div#privacyMaskClearButton').click(function () {
         var cameraId = $('#cameraSelect').val();
         if (!cameraId) {
             return;
@@ -1147,7 +1155,7 @@ function hideCameraOverlay() {
     disableMaskEdit();
 }
 
-function enableMaskEdit(cameraId, width, height) {
+function enableMaskEdit(cameraId, maskClass, width, height) {
     var cameraFrame = getCameraFrame(cameraId);
     var overlayDiv = cameraFrame.find('div.camera-overlay');
     var maskDiv = cameraFrame.find('div.camera-overlay-mask');
@@ -1233,8 +1241,8 @@ function enableMaskEdit(cameraId, width, height) {
 
             maskLines.push(line);
         }
-
-        $('#maskLinesEntry').val(maskLines.join(',')).change();
+        
+        $('#'+maskClass+'MaskLinesEntry').val(maskLines.join(',')).change();
     }
 
     function handleMouseUp() {
@@ -1313,7 +1321,7 @@ function enableMaskEdit(cameraId, width, height) {
 
     /* use mask lines to initialize the element matrix */
     var line;
-    var maskLines = $('#maskLinesEntry').val() ? $('#maskLinesEntry').val().split(',').map(function (v) {return parseInt(v);}) : [];
+    var maskLines = $('#'+maskClass+'MaskLinesEntry').val() ? $('#'+maskClass+'MaskLinesEntry').val().split(',').map(function (v) {return parseInt(v);}) : [];
     maskLines = maskLines.slice(2);
 
     for (y = 0; y < ny; y++) {
@@ -1343,8 +1351,8 @@ function enableMaskEdit(cameraId, width, height) {
 
     var selectedCameraId = $('#cameraSelect').val();
     if (selectedCameraId && (!cameraId || cameraId == selectedCameraId)) {
-        $('#saveMaskButton, #clearMaskButton').css('display', 'inline-block');
-        $('#editMaskButton').css('display', 'none');
+        $('#'+maskClass+'MaskSaveButton, #'+maskClass+'MaskClearButton').css('display', 'inline-block');
+        $('#'+maskClass+'MaskEditButton').css('display', 'none');
     }
 
     if (!overlayVisible) {
@@ -1352,14 +1360,25 @@ function enableMaskEdit(cameraId, width, height) {
     }
 }
 
-function disableMaskEdit(cameraId) {
-    var cameraFrames;
-    if (cameraId) {
-        cameraFrames = [getCameraFrame(cameraId)];
+function disableMaskEdit(maskClass) {
+    if (!maskClass) {
+        /* disable mask editor regardless of the mask class */
+        disableMaskOverlay();
+        $('.edit-mask-button').css('display', 'inline-block');
+        $('.save-mask-button, .clear-mask-button').css('display', 'none');
+    } else {
+        if ($('#'+maskClass+'MaskSaveButton').css('display') !== 'none') {
+            /* only disable mask overlay if it is for the same mask class*/
+            disableMaskOverlay();
+        }
+        $('#'+maskClass+'MaskEditButton').css('display', 'inline-block');
+        $('#'+maskClass+'MaskSaveButton, #'+maskClass+'MaskClearButton').css('display', 'none');
     }
-    else { /* disable mask editor on any camera */
-        cameraFrames = getCameraFrames().toArray().map(function (f) {return $(f);});
-    }
+}
+
+function disableMaskOverlay() {
+    /* disable mask overlay on any camera */
+    var  cameraFrames = getCameraFrames().toArray().map(function (f) {return $(f);});
 
     cameraFrames.forEach(function (cameraFrame) {
         var overlayDiv = cameraFrame.find('div.camera-overlay');
@@ -1369,12 +1388,6 @@ function disableMaskEdit(cameraId) {
         maskDiv.html('');
         maskDiv.unbind('click');
     });
-
-    var selectedCameraId = $('#cameraSelect').val();
-    if (selectedCameraId && (!cameraId || cameraId == selectedCameraId)) {
-        $('#editMaskButton').css('display', 'inline-block');
-        $('#saveMaskButton, #clearMaskButton').css('display', 'none');
-    }
 }
 
 function clearMask(cameraId) {
@@ -1872,6 +1885,8 @@ function cameraUi2Dict() {
         'auto_brightness': $('#autoBrightnessSwitch')[0].checked,
         'rotation': $('#rotationSelect').val(),
         'framerate': $('#framerateSlider').val(),
+        'privacy_mask': $('#privacyMaskSwitch')[0].checked,
+        'privacy_mask_lines': $('#privacyMaskLinesEntry').val() ? $('#privacyMaskLinesEntry').val().split(',').map(function (l) {return parseInt(l);}) : [],
         'extra_options': $('#extraOptionsEntry').val().split(new RegExp('(\n)|(\r\n)|(\n\r)')).map(function (o) {
             if (!o) {
                 return null;
@@ -1971,10 +1986,10 @@ function cameraUi2Dict() {
         'pre_capture': $('#preCaptureEntry').val(),
         'post_capture': $('#postCaptureEntry').val(),
         'minimum_motion_frames': $('#minimumMotionFramesEntry').val(),
-        'mask': $('#maskSwitch')[0].checked,
-        'mask_type': $('#maskTypeSelect').val(),
+        'motion_mask': $('#motionMaskSwitch')[0].checked,
+        'motion_mask_type': $('#motionMaskTypeSelect').val(),
         'smart_mask_sluggishness': $('#smartMaskSluggishnessSlider').val(),
-        'mask_lines': $('#maskLinesEntry').val() ? $('#maskLinesEntry').val().split(',').map(function (l) {return parseInt(l);}) : [],
+        'motion_mask_lines': $('#motionMaskLinesEntry').val() ? $('#motionMaskLinesEntry').val().split(',').map(function (l) {return parseInt(l);}) : [],
         'show_frame_changes': $('#showFrameChangesSwitch')[0].checked,
         'create_debug_media': $('#createDebugMediaSwitch')[0].checked,
 
@@ -1988,6 +2003,10 @@ function cameraUi2Dict() {
         'email_notifications_smtp_password': $('#smtpPasswordEntry').val(),
         'email_notifications_smtp_tls': $('#smtpTlsSwitch')[0].checked,
         'email_notifications_picture_time_span': $('#emailPictureTimeSpanEntry').val(),
+        'telegram_notifications_enabled': $('#telegramNotificationsEnabledSwitch')[0].checked,
+        'telegram_notifications_api': $('#telegramAPIEntry').val(),
+        'telegram_notifications_chat_id': $('#telegramCIDEntry').val(),
+        'telegram_notifications_picture_time_span': $('#telegramPictureTimeSpanEntry').val(),
         'web_hook_notifications_enabled': $('#webHookNotificationsEnabledSwitch')[0].checked,
         'web_hook_notifications_url': $('#webHookNotificationsUrlEntry').val(),
         'web_hook_notifications_http_method': $('#webHookNotificationsHttpMethodSelect').val(),
@@ -2171,6 +2190,8 @@ function dict2CameraUi(dict) {
 
     $('#rotationSelect').val(dict['rotation']); markHideIfNull('rotation', 'rotationSelect');
     $('#framerateSlider').val(dict['framerate']); markHideIfNull('framerate', 'framerateSlider');
+    $('#privacyMaskSwitch')[0].checked = dict['privacy_mask']; markHideIfNull('privacy_mask', 'privacyMaskSwitch');
+    $('#privacyMaskLinesEntry').val((dict['privacy_mask_lines'] || []).join(',')); markHideIfNull('privacy_mask_lines', 'privacyMaskLinesEntry');
     $('#extraOptionsEntry').val(dict['extra_options'] ? (dict['extra_options'].map(function (o) {
         return o.join(' ');
     }).join('\r\n')) : ''); markHideIfNull('extra_options', 'extraOptionsEntry');
@@ -2338,10 +2359,10 @@ function dict2CameraUi(dict) {
     $('#preCaptureEntry').val(dict['pre_capture']); markHideIfNull('pre_capture', 'preCaptureEntry');
     $('#postCaptureEntry').val(dict['post_capture']); markHideIfNull('post_capture', 'postCaptureEntry');
     $('#minimumMotionFramesEntry').val(dict['minimum_motion_frames']); markHideIfNull('minimum_motion_frames', 'minimumMotionFramesEntry');
-    $('#maskSwitch')[0].checked = dict['mask']; markHideIfNull('mask', 'maskSwitch');
-    $('#maskTypeSelect').val(dict['mask_type']); markHideIfNull('mask_type', 'maskTypeSelect');
+    $('#motionMaskSwitch')[0].checked = dict['motion_mask']; markHideIfNull('motion_mask', 'motionMaskSwitch');
+    $('#motionMaskTypeSelect').val(dict['motion_mask_type']); markHideIfNull('motion_mask_type', 'motionMaskTypeSelect');
     $('#smartMaskSluggishnessSlider').val(dict['smart_mask_sluggishness']); markHideIfNull('smart_mask_sluggishness', 'smartMaskSluggishnessSlider');
-    $('#maskLinesEntry').val((dict['mask_lines'] || []).join(',')); markHideIfNull('mask_lines', 'maskLinesEntry');
+    $('#motionMaskLinesEntry').val((dict['motion_mask_lines'] || []).join(',')); markHideIfNull('motion_mask_lines', 'motionMaskLinesEntry');
     $('#showFrameChangesSwitch')[0].checked = dict['show_frame_changes']; markHideIfNull('show_frame_changes', 'showFrameChangesSwitch');
     $('#createDebugMediaSwitch')[0].checked = dict['create_debug_media']; markHideIfNull('create_debug_media', 'createDebugMediaSwitch');
 
@@ -2355,6 +2376,11 @@ function dict2CameraUi(dict) {
     $('#smtpPasswordEntry').val(dict['email_notifications_smtp_password']);
     $('#smtpTlsSwitch')[0].checked = dict['email_notifications_smtp_tls'];
     $('#emailPictureTimeSpanEntry').val(dict['email_notifications_picture_time_span']);
+
+    $('#telegramNotificationsEnabledSwitch')[0].checked = dict['telegram_notifications_enabled']; markHideIfNull('telegram_notifications_enabled', 'telegramNotificationsEnabledSwitch');
+    $('#telegramAPIEntry').val(dict['telegram_notifications_api']);
+    $('#telegramCIDEntry').val(dict['telegram_notifications_chat_id']);
+    $('#telegramPictureTimeSpanEntry').val(dict['telegram_notifications_picture_time_span']);
 
     $('#webHookNotificationsEnabledSwitch')[0].checked = dict['web_hook_notifications_enabled']; markHideIfNull('web_hook_notifications_enabled', 'webHookNotificationsEnabledSwitch');
     $('#webHookNotificationsUrlEntry').val(dict['web_hook_notifications_url']);
@@ -2537,6 +2563,11 @@ function downloadFile(path) {
     var frame = $('<iframe style="display: none;"></iframe>');
     frame.attr('src', url);
     $('body').append(frame);
+}
+
+function deleteFile(path, callback) {
+    path = basePath + path;
+    doDeleteFile(path, callback);
 }
 
 function uploadFile(path, input, callback) {
@@ -3022,6 +3053,41 @@ function doTestEmail() {
         }
         else {
             showPopupMessage('Notification email succeeded!', 'info');
+        }
+    });
+}
+
+function doTestTelegram() {
+    var q = $('#telegramAPIEntry, #telegramCIDEntry');
+    var valid = true;
+    q.each(function() {
+        this.validate();
+        if (this.invalid) {
+            valid = false;
+        }
+    });
+
+    if (!valid) {
+        return runAlertDialog('Make sure all the configuration options are valid!');
+    }
+
+    showModalDialog('<div class="modal-progress"></div>', null, null, true);
+
+    var data = {
+        what: 'telegram',
+        api: $('#telegramAPIEntry').val(),
+        chatid: $('#telegramCIDEntry').val(),
+    };
+
+    var cameraId = $('#cameraSelect').val();
+
+    ajax('POST', basePath + 'config/' + cameraId + '/test/', data, function (data) {
+        hideModalDialog(); /* progress */
+        if (data.error) {
+            showErrorMessage('Telegram notification failed: ' + data.error + '!');
+        }
+        else {
+            showPopupMessage('Telegram notification succeeded!', 'info');
         }
     });
 }
@@ -3512,7 +3578,7 @@ function runLoginDialog(retry) {
     runModalDialog(params);
 }
 
-function runPictureDialog(entries, pos, mediaType) {
+function runPictureDialog(entries, pos, mediaType, onDelete) {
     var content = $('<div class="picture-dialog-content"></div>');
 
     var img = $('<img class="picture-dialog-content">');
@@ -3535,7 +3601,7 @@ function runPictureDialog(entries, pos, mediaType) {
                 msg = 'Media decode error or unsupported media features.';
                 break;
             case err.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                msg = 'Media format unsupported or otherwise unavilable/unsuitable for playing.';
+                msg = 'Media format unsupported or otherwise unavailable/unsuitable for playing.';
                 break;
             default:
                 msg = 'Unknown error occurred.'
@@ -3658,18 +3724,43 @@ function runPictureDialog(entries, pos, mediaType) {
 
     img.load(updateModalDialogPosition);
 
-    runModalDialog({
-        title: ' ',
-        closeButton: true,
-        buttons: [
+    var buttons = [
             {caption: 'Close'},
             {caption: 'Download', isDefault: true, click: function () {
                 var entry = entries[pos];
                 downloadFile(mediaType + '/' + entry.cameraId + '/download' + entry.path);
 
                 return false;
-            }}
-        ],
+            }}];
+    if (isAdmin()) {
+        buttons.push({
+                caption: 'Delete',
+                isDefault: false,
+                className: 'delete',
+                click: function () {
+                    var entry = entries[pos];
+                    var callback = function() {
+                        onDelete(entry);
+                        if (entries.length > 0) {
+                            if (pos > entries.length -1) {
+                                pos--;
+                            }
+                            updatePicture();
+                        } else {
+                            hideModalDialog(); /* Close dialog after deleting the only remaining entry */
+                        }
+                    }
+                    deleteFile(mediaType + '/' + entry.cameraId + '/delete' + entry.path, callback);
+
+                    return false;
+                }
+            });
+    }
+
+    runModalDialog({
+        title: ' ',
+        closeButton: true,
+        buttons: buttons,
         content: content,
         stack: true,
         onShow: updatePicture,
@@ -4217,6 +4308,17 @@ function runMediaDialog(cameraId, mediaType) {
                     detailsDiv = $('<div class="media-list-entry-details"></div>');
                     entryDiv.append(detailsDiv);
 
+                    function updateGroupEntryCounter() {
+                        groupsDiv.find('div.media-dialog-group-button').each(function () {
+                            if (this.key == groupKey) {
+                                var text = this.innerHTML;
+                                text = text.substring(0, text.lastIndexOf(' '));
+                                text += ' (' + entries.length + ')';
+                                this.innerHTML = text;
+                            }
+                        });
+                    }
+
                     downloadButton.click(function () {
                         downloadFile(mediaType + '/' + cameraId + '/download' + entry.path);
                         return false;
@@ -4228,18 +4330,8 @@ function runMediaDialog(cameraId, mediaType) {
                             var pos = entries.indexOf(entry);
                             if (pos >= 0) {
                                 entries.splice(pos, 1); /* remove entry from group */
+                                updateGroupEntryCounter();
                             }
-
-                            /* update text on group button */
-                            groupsDiv.find('div.media-dialog-group-button').each(function () {
-                                var $this = $(this);
-                                if (this.key == groupKey) {
-                                    var text = this.innerHTML;
-                                    text = text.substring(0, text.lastIndexOf(' '));
-                                    text += ' (' + entries.length + ')';
-                                    this.innerHTML = text;
-                                }
-                            });
                         });
 
                         return false;
@@ -4247,7 +4339,19 @@ function runMediaDialog(cameraId, mediaType) {
 
                     entryDiv.click(function () {
                         var pos = entries.indexOf(entry);
-                        runPictureDialog(entries, pos, mediaType);
+                        var onDelete = function(deletedEntry) {
+                            var pos = entries.indexOf(deletedEntry);
+                            if (pos >= 0) {
+                                entries.splice(pos, 1); /* remove entry from group */
+                                $('.media-list-entry')[pos].remove(); /* remove entry from list in DOM */
+                                if (entries.length > 0) {
+                                    updateGroupEntryCounter();
+                                } else {
+                                    deleteGroup();
+                                }
+                            }
+                        };
+                        runPictureDialog(entries, pos, mediaType, onDelete);
                     });
 
                     entry.div = entryDiv;
@@ -4342,31 +4446,32 @@ function runMediaDialog(cameraId, mediaType) {
 
         deleteAllButton.click(function () {
             if (groupKey != null) {
-                doDeleteAllFiles(mediaType, cameraId, groupKey, function () {
-                    /* delete th group button */
-                    groupsDiv.find('div.media-dialog-group-button').each(function () {
-                        var $this = $(this);
-                        if (this.key == groupKey) {
-                            $this.remove();
-                        }
-                    });
-
-                    /* delete the group itself */
-                    delete groups[groupKey];
-
-                    /* show the first existing group, if any */
-                    var keys = Object.keys(groups);
-                    if (keys.length) {
-                        showGroup(keys[0]);
-                    }
-                    else {
-                        hideModalDialog();
-                    }
-                });
+                doDeleteAllFiles(mediaType, cameraId, groupKey, deleteGroup);
             }
         });
     }
 
+    function deleteGroup() {
+        /* delete the group button */
+        groupsDiv.find('div.media-dialog-group-button').each(function () {
+            var $this = $(this);
+            if (this.key == groupKey) {
+                $this.remove();
+            }
+        });
+
+        /* delete the group itself */
+        delete groups[groupKey];
+
+        /* show the first existing group, if any */
+        var keys = Object.keys(groups);
+        if (keys.length) {
+            showGroup(keys[0]);
+        }
+        else {
+            hideModalDialog();
+        }
+    }
     function updateDialogSize() {
         var windowWidth = $(window).width();
         var windowHeight = $(window).height();
