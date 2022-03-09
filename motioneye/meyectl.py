@@ -252,23 +252,23 @@ def main():
     arg_parser = make_arg_parser(command)
 
     if command in ('startserver', 'stopserver'):
-        import server
+        from motioneye import server
         server.main(arg_parser, sys.argv[2:], command[:-6])
 
     elif command == 'sendmail':
-        import sendmail
+        from motioneye import sendmail
         sendmail.main(arg_parser, sys.argv[2:])
     
     elif command == 'sendtelegram':
-        import sendtelegram
+        from motioneye import sendtelegram
         sendtelegram.main(arg_parser, sys.argv[2:])
     
     elif command == 'webhook':
-        import webhook
+        from motioneye import webhook
         webhook.main(arg_parser, sys.argv[2:])
 
     elif command == 'shell':
-        import shell
+        from motioneye import shell
         shell.main(arg_parser, sys.argv[2:])
 
     else:
