@@ -25,7 +25,7 @@ import sys
 # make sure motioneye is on python path
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import settings
+from motioneye import settings
 
 
 _LOG_FILE = 'motioneye.log'
