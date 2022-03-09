@@ -464,7 +464,10 @@ def test_rtsp_url(data, callback):
     stream = None
 
     #io_loop = IOLoop.instance()
-    io_loop = asyncio.get_running_loop()
+    try:
+        io_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        io_loop = asyncio.new_event_loop()
 
     def connect():
         if send_auth[0]:

@@ -33,7 +33,10 @@ from motioneye import settings
 def start():
     #io_loop = IOLoop.instance()
     #io_loop.add_timeout(datetime.timedelta(seconds=settings.MOUNT_CHECK_INTERVAL), _check_mounts)
-    io_loop = asyncio.get_running_loop()
+    try:
+        io_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        io_loop = asyncio.new_event_loop()
     io_loop.call_later(settings.MOUNT_CHECK_INTERVAL, _check_mounts)
 
 

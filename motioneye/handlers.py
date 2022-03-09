@@ -26,7 +26,7 @@ import subprocess
 import asyncio
 
 #from tornado.ioloop import IOLoop
-#from tornado.web import RequestHandler, StaticFileHandler, HTTPError, asynchronous
+from tornado.web import RequestHandler, StaticFileHandler, HTTPError, asynchronous
 
 from motioneye import config
 from motioneye import mediafiles
@@ -472,7 +472,10 @@ class ConfigHandler(BaseHandler):
 
                     #io_loop = IOLoop.instance()
                     #io_loop.add_timeout(datetime.timedelta(seconds=2), call_reboot)
-                    io_loop = asyncio.get_running_loop()
+                    try:
+                        io_loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        io_loop = asyncio.new_event_loop()
                     io_loop.call_later(2, call_reboot)
                     return self.finish({'reload': False, 'reboot': True, 'error': None})
 
@@ -1713,7 +1716,10 @@ class ActionHandler(BaseHandler):
 
         #self.io_loop = IOLoop.instance()
         #self.io_loop.add_timeout(datetime.timedelta(milliseconds=100), self.check_command)
-        self.io_loop = asyncio.get_running_loop()
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            io_loop = asyncio.new_event_loop()
         self.io_loop.call_later(0.1, self.check_command)
 
     def check_command(self):
@@ -1903,13 +1909,19 @@ class PowerHandler(BaseHandler):
     def shut_down(self):
         #io_loop = IOLoop.instance()
         #io_loop.add_timeout(datetime.timedelta(seconds=2), powerctl.shut_down)
-        io_loop = asyncio.get_running_loop()
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            io_loop = asyncio.new_event_loop()
         io_loop.call_later(2,powerctl.shut_down)
 
     def reboot(self):
         #io_loop = IOLoop.instance()
         #io_loop.add_timeout(datetime.timedelta(seconds=2), powerctl.reboot)
-        io_loop = asyncio.get_running_loop()
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            io_loop = asyncio.new_event_loop()
         io_loop.call_later(2, powerctl.reboot)
 
 

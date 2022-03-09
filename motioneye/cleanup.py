@@ -38,7 +38,10 @@ def start():
     # schedule the first call a bit later to improve performance at startup
     #io_loop = IOLoop.instance()
     #io_loop.add_timeout(datetime.timedelta(seconds=min(settings.CLEANUP_INTERVAL, 60)), _run_process)
-    io_loop = asyncio.get_running_loop()
+    try:
+        io_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        io_loop = asyncio.new_event_loop()
     io_loop.call_later(min(settings.CLEANUP_INTERVAL, 60), _run_process)
 
 
@@ -67,7 +70,10 @@ def _run_process():
     global _process
     
     #io_loop = IOLoop.instance()
-    io_loop = asyncio.get_running_loop()
+    try:
+        io_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        io_loop = asyncio.new_event_loop()
 
     # schedule the next call
     #io_loop.add_timeout(datetime.timedelta(seconds=settings.CLEANUP_INTERVAL), _run_process)

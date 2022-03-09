@@ -435,7 +435,10 @@ def list_media(camera_config, media_type, callback, prefix=None):
 
     def poll_process():
         #io_loop = IOLoop.instance()
-        io_loop = asyncio.get_running_loop()
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            io_loop = asyncio.new_event_loop()
         if process.is_alive():  # not finished yet
             now = datetime.datetime.now()
             delta = now - started
@@ -558,7 +561,10 @@ def get_zipped_content(camera_config, media_type, group, callback):
 
     def poll_process():
         #io_loop = IOLoop.instance()
-        io_loop = asyncio.get_running_loop()
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            io_loop = asyncio.new_event_loop()
         if working.value:
             now = datetime.datetime.now()
             delta = now - started
@@ -639,7 +645,10 @@ def make_timelapse_movie(camera_config, framerate, interval, group):
 
     def poll_media_list_process():
         #io_loop = IOLoop.instance()
-        io_loop = asyncio.get_running_loop()
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            io_loop = asyncio.new_event_loop()
         if _timelapse_process.is_alive():  # not finished yet
             now = datetime.datetime.now()
             delta = now - started[0]
@@ -730,7 +739,10 @@ def make_timelapse_movie(camera_config, framerate, interval, group):
         global _timelapse_data
 
         #io_loop = IOLoop.instance()
-        io_loop = asyncio.get_running_loop()
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            io_loop = asyncio.new_event_loop()
         if _timelapse_process.poll() is None:  # not finished yet
             #io_loop.add_timeout(datetime.timedelta(seconds=0.5), functools.partial(poll_movie_process, pictures))
             io_loop.call_later(0.5, functools.partial(poll_movie_process, pictures))
@@ -989,7 +1001,10 @@ def set_prepared_cache(data):
 
     #io_loop = IOLoop.instance()
     #io_loop.add_timeout(datetime.timedelta(seconds=timeout), clear)
-    io_loop = asyncio.get_running_loop()
+    try:
+        io_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        io_loop = asyncio.new_event_loop()
     io_loop.call_later(timeout, clear)
 
 

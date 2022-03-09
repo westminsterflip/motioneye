@@ -46,7 +46,10 @@ def start():
 
     #io_loop = IOLoop.instance()
     #io_loop.add_timeout(datetime.timedelta(seconds=_INTERVAL), _check_tasks)
-    io_loop = asyncio.get_running_loop()
+    try:
+        io_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        io_loop = asyncio.new_event_loop()
     io_loop.call_later(_INTERVAL, _check_tasks)
     
     def init_pool_process():
@@ -93,7 +96,10 @@ def add(when, func, tag=None, callback=None, **params):
 def _check_tasks():
     #io_loop = IOLoop.instance()
     #io_loop.add_timeout(datetime.timedelta(seconds=_INTERVAL), _check_tasks)
-    io_loop = asyncio.get_running_loop()
+    try:
+        io_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        io_loop = asyncio.new_event_loop()
     io_loop.call_later(_INTERVAL, _check_tasks)
     
     now = time.time()

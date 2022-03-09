@@ -124,7 +124,7 @@ class Daemon(object):
         except Exception as e:
             sys.stderr.write('failed to terminate server: %s\n' % e)
 
-        for i in xrange(50):  # @UnusedVariable
+        for i in range(50):  # @UnusedVariable
             try:
                 os.kill(pid, 0)
                 time.sleep(0.1)
@@ -318,7 +318,10 @@ def start_motion():
     from motioneye import motionctl
 
     #io_loop = IOLoop.instance()
-    io_loop = asyncio.new_event_loop()
+    try:
+        io_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        io_loop = asyncio.new_event_loop()
 
     # add a motion running checker
     def checker():
