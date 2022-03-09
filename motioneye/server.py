@@ -258,16 +258,16 @@ def test_requirements():
         logging.fatal('please install pycurl')
         sys.exit(-1)
     
-    import motionctl
+    from motioneye import motionctl
     has_motion = motionctl.find_motion()[0] is not None
     
-    import mediafiles
+    from motioneye import mediafiles
     has_ffmpeg = mediafiles.find_ffmpeg() is not None
     
-    import v4l2ctl
+    from motioneye import v4l2ctl
     has_v4lutils = v4l2ctl.find_v4l2_ctl() is not None
 
-    import smbctl
+    from motioneye import smbctl
     if settings.SMB_SHARES and smbctl.find_mount_cifs() is None:
         logging.fatal('please install cifs-utils')
         sys.exit(-1)
@@ -310,7 +310,7 @@ def make_media_folders():
 
 def start_motion():
     import config
-    import motionctl
+    from motioneye import motionctl
 
     io_loop = IOLoop.instance()
     
@@ -348,12 +348,12 @@ def parse_options(parser, args):
 
 def run():
     import cleanup
-    import mjpgclient
-    import motionctl
+    from motioneye import mjpgclient
+    from motioneye import motionctl
     import motioneye
-    import smbctl
-    import tasks
-    import wsswitch
+    from motioneye import smbctl
+    from motioneye import tasks
+    from motioneye import wsswitch
 
     configure_signals()
     logging.info('hello! this is motionEye server %s' % motioneye.VERSION)
@@ -421,7 +421,7 @@ def run():
 
 
 def main(parser, args, command):
-    import meyectl
+    from motioneye import meyectl
     
     options = parse_options(parser, args)
     

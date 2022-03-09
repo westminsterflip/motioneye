@@ -26,8 +26,8 @@ import urllib
 import urllib2
 import pycurl
 
-import settings
-import utils
+from motioneye import settings
+from motioneye import utils
 import config
 import datetime
 
