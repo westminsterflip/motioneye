@@ -27,7 +27,7 @@ import time
 import asyncio
 
 #from tornado.ioloop import IOLoop
-#from tornado.web import Application
+from tornado.web import Application
 
 from motioneye import handlers
 from motioneye import settings
