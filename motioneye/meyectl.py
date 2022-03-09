@@ -54,7 +54,7 @@ def load_settings():
     config_file = None
     debug = False
 
-    for i in xrange(1, len(sys.argv)):
+    for i in range(1, len(sys.argv)):
         arg = sys.argv[i]
         next_arg = i < len(sys.argv) - 1 and sys.argv[i + 1]
         if arg == '-c':
