@@ -28,9 +28,9 @@ import time
 from tornado.ioloop import IOLoop
 from tornado.web import Application
 
-import handlers
-import settings
-import template
+from motioneye import handlers
+from motioneye import settings
+from motioneye import template
 
 
 _PID_FILE = 'motioneye.pid'
