@@ -25,11 +25,11 @@ import socket
 import time
 import asyncio
 
-from email import Encoders
+from email import encoders
 from email.mime.text import MIMEText
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEBase import MIMEBase
-from email.Utils import formatdate
+from email.mime import multipart
+from email.mime import base
+from email.utils import formatdate
 
 #from tornado.ioloop import IOLoop
 
@@ -57,7 +57,7 @@ def send_mail(server, port, account, password, tls, _from, to, subject, message,
     if account and password:
         conn.login(account, password)
     
-    email = MIMEMultipart()
+    email = multipart.MIMEMultipart()
     email['Subject'] = subject
     email['From'] = _from
     email['To'] = ', '.join(to)
@@ -65,11 +65,11 @@ def send_mail(server, port, account, password, tls, _from, to, subject, message,
     email.attach(MIMEText(message))
     
     for name in reversed(files):
-        part = MIMEBase('image', 'jpeg')
+        part = base.MIMEBase('image', 'jpeg')
         with open(name, 'rb') as f:
             part.set_payload(f.read())
-        
-        Encoders.encode_base64(part)
+
+        encoders.encode_base64(part)
         part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(name))
         email.attach(part)
     
@@ -149,7 +149,7 @@ def make_message(subject, message, camera_id, moment, timespan, callback):
 
     mediafiles.list_media(camera_config, media_type='picture', prefix=prefix, callback=on_media_files)
     
-    io_loop.start()
+    io_loop.run_forever()
 
 
 def parse_options(parser, args):
@@ -189,7 +189,7 @@ def main(parser, args):
     meyectl.configure_logging('sendmail', options.log_to_file)
 
     logging.debug('hello!')
-
+    
     options.port = int(options.port) 
     options.tls = options.tls.lower() == 'true'
     options.timespan = int(options.timespan)
