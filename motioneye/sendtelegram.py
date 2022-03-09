@@ -33,12 +33,13 @@ import uuid
 import binascii
 import datetime
 import json
+import asyncio
 
-from tornado.ioloop import IOLoop
+#from tornado.ioloop import IOLoop
 
 from motioneye import settings
 
-import config
+from motioneye import config
 from motioneye import mediafiles
 from motioneye import motionctl
 from motioneye import tzctl
@@ -73,11 +74,12 @@ def make_message(message, camera_id, moment, timespan, callback):
     camera_config = config.get_camera(camera_id)
     
     # we must start the IO loop for the media list subprocess polling
-    io_loop = IOLoop.instance()
+    #io_loop = IOLoop.instance()
+    io_loop = asyncio.get_running_loop()
 
     def on_media_files(media_files):
         io_loop.stop()
-        photos = []
+        photos = [] #UNUSED?
 
         timestamp = time.mktime(moment.timetuple())
         if media_files:
@@ -154,7 +156,7 @@ def main(parser, args):
         args[7] = 'motionEye on %s <%s>' % (socket.gethostname(), args[8].split(',')[0])
 
     options = parse_options(parser, args)
-    print options 
+    print(options)
     meyectl.configure_logging('telegram', options.log_to_file)
 
     logging.debug('hello!')
@@ -170,7 +172,7 @@ def main(parser, args):
     
     def on_message(message, files):
         try:
-            print message
+            print(message)
             logging.info('sending telegram')
             send_message(options.api, options.chatid, message, files or [])
             logging.info('telegram sent')

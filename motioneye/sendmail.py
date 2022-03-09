@@ -23,6 +23,7 @@ import signal
 import smtplib
 import socket
 import time
+import asyncio
 
 from email import Encoders
 from email.mime.text import MIMEText
@@ -30,15 +31,14 @@ from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.Utils import formatdate
 
-from tornado.ioloop import IOLoop
+#from tornado.ioloop import IOLoop
 
 from motioneye import settings
 
-import config
+from motioneye import config
 from motioneye import mediafiles
 from motioneye import motionctl
 from motioneye import tzctl
-
 
 messages = {
     'motion_start': 'Motion has been detected by camera "%(camera)s/%(hostname)s" at %(moment)s (%(timezone)s).'
@@ -85,9 +85,11 @@ def make_message(subject, message, camera_id, moment, timespan, callback):
     camera_config = config.get_camera(camera_id)
     
     # we must start the IO loop for the media list subprocess polling
-    io_loop = IOLoop.instance()
+    #io_loop = IOLoop.instance()
+    io_loop = asyncio.get_running_loop()
 
     def on_media_files(media_files):
+        #io_loop.stop()
         io_loop.stop()
         
         timestamp = time.mktime(moment.timetuple())

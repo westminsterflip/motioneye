@@ -20,8 +20,9 @@ import logging
 import multiprocessing
 import os
 import signal
+import asyncio
 
-from tornado.ioloop import IOLoop
+#from tornado.ioloop import IOLoop
 
 from motioneye import mediafiles
 from motioneye import settings
@@ -35,8 +36,10 @@ def start():
         return
 
     # schedule the first call a bit later to improve performance at startup
-    io_loop = IOLoop.instance()
-    io_loop.add_timeout(datetime.timedelta(seconds=min(settings.CLEANUP_INTERVAL, 60)), _run_process)
+    #io_loop = IOLoop.instance()
+    #io_loop.add_timeout(datetime.timedelta(seconds=min(settings.CLEANUP_INTERVAL, 60)), _run_process)
+    io_loop = asyncio.get_running_loop()
+    io_loop.call_later(min(settings.CLEANUP_INTERVAL, 60), _run_process)
 
 
 def stop():
@@ -63,10 +66,12 @@ def running():
 def _run_process():
     global _process
     
-    io_loop = IOLoop.instance()
-    
+    #io_loop = IOLoop.instance()
+    io_loop = asyncio.get_running_loop()
+
     # schedule the next call
-    io_loop.add_timeout(datetime.timedelta(seconds=settings.CLEANUP_INTERVAL), _run_process)
+    #io_loop.add_timeout(datetime.timedelta(seconds=settings.CLEANUP_INTERVAL), _run_process)
+    io_loop.call_later(settings.CLEANUP_INTERVAL, _run_process)
 
     if not running():  # check that the previous process has finished
         logging.debug('running cleanup process...')

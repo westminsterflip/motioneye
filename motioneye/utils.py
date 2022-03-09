@@ -28,12 +28,13 @@ import time
 import urllib
 import urllib.request
 import urllib.parse
+import asyncio
 
 from PIL import Image, ImageDraw
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.iostream import IOStream
-from tornado.ioloop import IOLoop
+#from tornado.ioloop import IOLoop
 
 from motioneye import settings
 
@@ -462,7 +463,8 @@ def test_rtsp_url(data, callback):
     timeout = [None]
     stream = None
 
-    io_loop = IOLoop.instance()
+    #io_loop = IOLoop.instance()
+    io_loop = asyncio.get_running_loop()
 
     def connect():
         if send_auth[0]:
@@ -477,13 +479,14 @@ def test_rtsp_url(data, callback):
         stream.set_close_callback(on_close)
         stream.connect((host, int(port)), on_connect)
 
-        timeout[0] = io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT),
-                                         functools.partial(on_connect, _timeout=True))
+        #timeout[0] = io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT), functools.partial(on_connect, _timeout=True))
+        timeout[0] = io_loop.call_later(settings.MJPG_CLIENT_TIMEOUT, functools.partial(on_connect, timeout=True))
 
         return stream
 
     def on_connect(_timeout=False):
-        io_loop.remove_timeout(timeout[0])
+        #io_loop.remove_timeout(timeout[0])
+        timeout[0].cancel()
 
         if _timeout:
             return handle_error('timeout connecting to rtsp netcam')

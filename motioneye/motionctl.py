@@ -22,8 +22,9 @@ import re
 import signal
 import subprocess
 import time
+import asyncio
 
-from tornado.ioloop import IOLoop
+#from tornado.ioloop import IOLoop
 
 from motioneye import mediafiles
 from motioneye import powerctl
@@ -78,8 +79,10 @@ def start(deferred=False):
     from motioneye import mjpgclient
 
     if deferred:
-        io_loop = IOLoop.instance()
-        io_loop.add_callback(start, deferred=False)
+        #io_loop = IOLoop.instance()
+        #io_loop.add_callback(start, deferred=False)
+        io_loop = asyncio.get_running_loop()
+        io_loop.call_soon(start, deferred=False)
 
     global _started
 
@@ -122,7 +125,7 @@ def start(deferred=False):
     process = subprocess.Popen(args, stdout=log_file, stderr=log_file, close_fds=True, cwd=settings.CONF_PATH)
 
     # wait 2 seconds to see that the process has successfully started
-    for i in xrange(20):  # @UnusedVariable
+    for i in range(20):  # @UnusedVariable
         time.sleep(0.1)
         exit_code = process.poll()
         if exit_code is not None and exit_code != 0:
@@ -164,7 +167,7 @@ def stop(invalidate=False):
             os.kill(pid, signal.SIGTERM)
 
             # wait 5 seconds for the process to exit
-            for i in xrange(50):  # @UnusedVariable
+            for i in range(50):  # @UnusedVariable
                 os.waitpid(pid, os.WNOHANG)
                 time.sleep(0.1)
 
@@ -172,7 +175,7 @@ def stop(invalidate=False):
             os.kill(pid, signal.SIGKILL)
 
             # wait 2 seconds for the process to exit
-            for i in xrange(20):  # @UnusedVariable
+            for i in range(20):  # @UnusedVariable
                 time.sleep(0.1)
                 os.waitpid(pid, os.WNOHANG)
 

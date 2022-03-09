@@ -21,17 +21,20 @@ import os
 import re
 import subprocess
 import time
+import asyncio
 from motioneye import utils
 
-from tornado.ioloop import IOLoop
+#from tornado.ioloop import IOLoop
 
-import config
+from motioneye import config
 from motioneye import settings
 
 
 def start():
-    io_loop = IOLoop.instance()
-    io_loop.add_timeout(datetime.timedelta(seconds=settings.MOUNT_CHECK_INTERVAL), _check_mounts)
+    #io_loop = IOLoop.instance()
+    #io_loop.add_timeout(datetime.timedelta(seconds=settings.MOUNT_CHECK_INTERVAL), _check_mounts)
+    io_loop = asyncio.get_running_loop()
+    io_loop.call_later(settings.MOUNT_CHECK_INTERVAL, _check_mounts)
 
 
 def stop():
@@ -282,6 +285,7 @@ def _check_mounts():
     if start:
         motionctl.start()
         
-    io_loop = IOLoop.instance()
-    io_loop.add_timeout(datetime.timedelta(seconds=settings.MOUNT_CHECK_INTERVAL), _check_mounts)
-
+    #io_loop = IOLoop.instance()
+    #io_loop.add_timeout(datetime.timedelta(seconds=settings.MOUNT_CHECK_INTERVAL), _check_mounts)
+    io_loop = asyncio.get_running_loop()
+    io_loop.call_later(settings.MOUNT_CHECK_INTERVAL, _check_mounts)

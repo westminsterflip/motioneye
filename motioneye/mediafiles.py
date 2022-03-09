@@ -31,9 +31,10 @@ from io import StringIO
 import subprocess
 import time
 import zipfile
+import asyncio
 
-from PIL import Image
-from tornado.ioloop import IOLoop
+#from PIL import Image
+#from tornado.ioloop import IOLoop
 
 from motioneye import config
 from motioneye import settings
@@ -433,12 +434,14 @@ def list_media(camera_config, media_type, callback, prefix=None):
                 break
 
     def poll_process():
-        io_loop = IOLoop.instance()
+        #io_loop = IOLoop.instance()
+        io_loop = asyncio.get_running_loop()
         if process.is_alive():  # not finished yet
             now = datetime.datetime.now()
             delta = now - started
             if delta.seconds < settings.LIST_MEDIA_TIMEOUT:
-                io_loop.add_timeout(datetime.timedelta(seconds=0.5), poll_process)
+                #io_loop.add_timeout(datetime.timedelta(seconds=0.5), poll_process)
+                io_loop.call_later(0.5, poll_process())
                 read_media_list()
 
             else:  # process did not finish in time
@@ -554,12 +557,14 @@ def get_zipped_content(camera_config, media_type, group, callback):
     started = datetime.datetime.now()
 
     def poll_process():
-        io_loop = IOLoop.instance()
+        #io_loop = IOLoop.instance()
+        io_loop = asyncio.get_running_loop()
         if working.value:
             now = datetime.datetime.now()
             delta = now - started
             if delta.seconds < settings.ZIP_TIMEOUT:
-                io_loop.add_timeout(datetime.timedelta(seconds=0.5), poll_process)
+                #io_loop.add_timeout(datetime.timedelta(seconds=0.5), poll_process)
+                io_loop.call_later(0.5, poll_process)
 
             else:  # process did not finish in time
                 logging.error('timeout waiting for the zip process to finish')
@@ -633,12 +638,14 @@ def make_timelapse_movie(camera_config, framerate, interval, group):
                 break
 
     def poll_media_list_process():
-        io_loop = IOLoop.instance()
+        #io_loop = IOLoop.instance()
+        io_loop = asyncio.get_running_loop()
         if _timelapse_process.is_alive():  # not finished yet
             now = datetime.datetime.now()
             delta = now - started[0]
             if delta.seconds < settings.TIMELAPSE_TIMEOUT:  # the subprocess has limited time to complete its job
-                io_loop.add_timeout(datetime.timedelta(seconds=0.5), poll_media_list_process)
+                #io_loop.add_timeout(datetime.timedelta(seconds=0.5), poll_media_list_process)
+                io_loop.call_later(0.5, poll_media_list_process)
                 read_media_list()
 
             else:  # process did not finish in time
@@ -722,9 +729,11 @@ def make_timelapse_movie(camera_config, framerate, interval, group):
         global _timelapse_process
         global _timelapse_data
 
-        io_loop = IOLoop.instance()
+        #io_loop = IOLoop.instance()
+        io_loop = asyncio.get_running_loop()
         if _timelapse_process.poll() is None:  # not finished yet
-            io_loop.add_timeout(datetime.timedelta(seconds=0.5), functools.partial(poll_movie_process, pictures))
+            #io_loop.add_timeout(datetime.timedelta(seconds=0.5), functools.partial(poll_movie_process, pictures))
+            io_loop.call_later(0.5, functools.partial(poll_movie_process, pictures))
 
             try:
                 output = _timelapse_process.stdout.read()
@@ -978,7 +987,10 @@ def set_prepared_cache(data):
 
     timeout = 3600  # the user has 1 hour to download the file after creation
 
-    io_loop = IOLoop.instance()
-    io_loop.add_timeout(datetime.timedelta(seconds=timeout), clear)
+    #io_loop = IOLoop.instance()
+    #io_loop.add_timeout(datetime.timedelta(seconds=timeout), clear)
+    io_loop = asyncio.get_running_loop()
+    io_loop.call_later(timeout, clear)
+
 
     return key

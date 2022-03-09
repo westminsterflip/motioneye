@@ -23,9 +23,10 @@ import os
 import re
 import socket
 import subprocess
+import asyncio
 
-from tornado.ioloop import IOLoop
-from tornado.web import RequestHandler, StaticFileHandler, HTTPError, asynchronous
+#from tornado.ioloop import IOLoop
+#from tornado.web import RequestHandler, StaticFileHandler, HTTPError, asynchronous
 
 from motioneye import config
 from motioneye import mediafiles
@@ -469,8 +470,10 @@ class ConfigHandler(BaseHandler):
                     def call_reboot():
                         powerctl.reboot()
 
-                    io_loop = IOLoop.instance()
-                    io_loop.add_timeout(datetime.timedelta(seconds=2), call_reboot)
+                    #io_loop = IOLoop.instance()
+                    #io_loop.add_timeout(datetime.timedelta(seconds=2), call_reboot)
+                    io_loop = asyncio.get_running_loop()
+                    io_loop.call_later(2, call_reboot)
                     return self.finish({'reload': False, 'reboot': True, 'error': None})
 
                 else:
@@ -1007,8 +1010,8 @@ class PictureHandler(BaseHandler):
             # get_current_picture() will make sure to start a client, but a jpeg frame is not available right away;
             # wait at most 5 seconds and retry every 200 ms.
             if not picture and retry < 25:
-                return IOLoop.instance().add_timeout(datetime.timedelta(seconds=0.2), self.current,
-                                                     camera_id=camera_id, retry=retry + 1)
+                #return IOLoop.instance().add_timeout(datetime.timedelta(seconds=0.2), self.current,camera_id=camera_id, retry=retry + 1)
+                return asyncio.get_running_loop().call_later(0.2, self.current, camera_id=camera_id, retry=retry + 1)
 
             self.set_cookie('motion_detected_' + camera_id_str, str(motionctl.is_motion_detected(camera_id)).lower())
             self.set_cookie('capture_fps_' + camera_id_str, '%.1f' % mjpgclient.get_fps(camera_id))
@@ -1708,8 +1711,10 @@ class ActionHandler(BaseHandler):
         self.p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         self.command = command
 
-        self.io_loop = IOLoop.instance()
-        self.io_loop.add_timeout(datetime.timedelta(milliseconds=100), self.check_command)
+        #self.io_loop = IOLoop.instance()
+        #self.io_loop.add_timeout(datetime.timedelta(milliseconds=100), self.check_command)
+        self.io_loop = asyncio.get_running_loop()
+        self.io_loop.call_later(0.1, self.check_command)
 
     def check_command(self):
         exit_status = self.p.poll()
@@ -1732,7 +1737,8 @@ class ActionHandler(BaseHandler):
             self.finish_json({'status': exit_status})
 
         else:
-            self.io_loop.add_timeout(datetime.timedelta(milliseconds=100), self.check_command)
+            #self.io_loop.add_timeout(datetime.timedelta(milliseconds=100), self.check_command)
+            self.io_loop.call_later(0.1, self.check_command)
 
     def snapshot(self, camera_id):
         motionctl.take_snapshot(camera_id)
@@ -1895,12 +1901,16 @@ class PowerHandler(BaseHandler):
             self.reboot()
 
     def shut_down(self):
-        io_loop = IOLoop.instance()
-        io_loop.add_timeout(datetime.timedelta(seconds=2), powerctl.shut_down)
+        #io_loop = IOLoop.instance()
+        #io_loop.add_timeout(datetime.timedelta(seconds=2), powerctl.shut_down)
+        io_loop = asyncio.get_running_loop()
+        io_loop.call_later(2,powerctl.shut_down)
 
     def reboot(self):
-        io_loop = IOLoop.instance()
-        io_loop.add_timeout(datetime.timedelta(seconds=2), powerctl.reboot)
+        #io_loop = IOLoop.instance()
+        #io_loop.add_timeout(datetime.timedelta(seconds=2), powerctl.reboot)
+        io_loop = asyncio.get_running_loop()
+        io_loop.call_later(2, powerctl.reboot)
 
 
 class VersionHandler(BaseHandler):
