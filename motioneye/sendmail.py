@@ -148,7 +148,7 @@ def make_message(subject, message, camera_id, moment, timespan, callback):
         logging.debug('narrowing down still images path lookup to %s' % prefix)
 
     mediafiles.list_media(camera_config, media_type='picture', prefix=prefix, callback=on_media_files)
-    
+
     io_loop.run_forever()
 
 
@@ -166,11 +166,11 @@ def parse_options(parser, args):
     parser.add_argument('timespan', help='picture collection time span')
 
     return parser.parse_args(args)
-    
+
 
 def main(parser, args):
     from motioneye import meyectl
-    
+
     # the motion daemon overrides SIGCHLD,
     # so we must restore it here,
     # or otherwise media listing won't work
@@ -180,28 +180,28 @@ def main(parser, args):
         # backwards compatibility with older configs lacking "from" field
         _from = 'motionEye on %s <%s>' % (socket.gethostname(), args[7].split(',')[0])
         args = args[:7] + [_from] + args[7:]
-    
+
     if not args[7]:
         args[7] = 'motionEye on %s <%s>' % (socket.gethostname(), args[8].split(',')[0])
 
     options = parse_options(parser, args)
-    
+
     meyectl.configure_logging('sendmail', options.log_to_file)
 
     logging.debug('hello!')
-    
-    options.port = int(options.port) 
+
+    options.port = int(options.port)
     options.tls = options.tls.lower() == 'true'
     options.timespan = int(options.timespan)
     message = messages.get(options.msg_id)
     subject = subjects.get(options.msg_id)
     options.moment = datetime.datetime.strptime(options.moment, '%Y-%m-%dT%H:%M:%S')
     options.password = options.password.replace('\\;', ';')  # unescape password
-    
+
     # do not wait too long for media list,
     # email notifications are critical
     settings.LIST_MEDIA_TIMEOUT = settings.LIST_MEDIA_TIMEOUT_EMAIL
-    
+
     camera_id = motionctl.motion_camera_id_to_camera_id(options.motion_camera_id)
     _from = getattr(options, 'from')
 
@@ -219,7 +219,7 @@ def main(parser, args):
     logging.debug('moment = %s' % options.moment.strftime('%Y-%m-%d %H:%M:%S'))
     logging.debug('smtp timeout = %d' % settings.SMTP_TIMEOUT)
     logging.debug('timespan = %d' % options.timespan)
-    
+
     to = [t.strip() for t in re.split('[,;| ]', options.to)]
     to = [t for t in to if t]
 
@@ -234,5 +234,5 @@ def main(parser, args):
             logging.error('failed to send mail: %s' % e, exc_info=True)
 
         logging.debug('bye!')
-    
+
     make_message(subject, message, camera_id, options.moment, options.timespan, on_message)

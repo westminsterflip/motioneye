@@ -317,11 +317,14 @@ def start_motion():
     import config
     from motioneye import motionctl
 
+    print("starting motion")
+
     #io_loop = IOLoop.instance()
     try:
         io_loop = asyncio.get_running_loop()
     except RuntimeError:
         io_loop = asyncio.new_event_loop()
+    io_loop.run_forever()
 
     # add a motion running checker
     def checker():
