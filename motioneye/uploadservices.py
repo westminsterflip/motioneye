@@ -20,7 +20,7 @@ import logging
 import mimetypes
 import os
 import os.path
-import StringIO
+from io import StringIO
 import time
 import urllib
 import urllib.request
@@ -28,7 +28,7 @@ import pycurl
 
 from motioneye import settings
 from motioneye import utils
-import config
+from motioneye import config
 import datetime
 
 _STATE_FILE_NAME = 'uploadservices.json'

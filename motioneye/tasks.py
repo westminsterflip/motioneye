@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 
 import calendar
-import cPickle
+import _pickle as cPickle
 import datetime
 import logging
 import multiprocessing

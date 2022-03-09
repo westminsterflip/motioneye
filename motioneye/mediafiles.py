@@ -27,7 +27,7 @@ import pipes
 import re
 import signal
 import stat
-import StringIO
+from io import StringIO
 import subprocess
 import time
 import zipfile
@@ -215,25 +215,25 @@ def find_ffmpeg():
 
     # version
     try:
-        output = subprocess.check_output(binary + ' -version', shell=True)
+        output = subprocess.check_output(binary + str(' -version').encode('ascii'), shell=True)
 
     except subprocess.CalledProcessError as e:
         logging.error('ffmpeg: could find version: %s' % e)
         return None, None, None
 
-    result = re.findall('ffmpeg version (.+?) ', output, re.IGNORECASE)
+    result = re.findall('ffmpeg version (.+?) ', output.decode('ascii'), re.IGNORECASE)
     version = result and result[0] or ''
 
     # codecs
     try:
-        output = subprocess.check_output(binary + ' -codecs -hide_banner', shell=True)
+        output = subprocess.check_output(binary + str(' -codecs -hide_banner').encode('ascii'), shell=True)
 
     except subprocess.CalledProcessError as e:
         logging.error('ffmpeg: could not list supported codecs: %s' % e)
         return None, None, None
 
-    lines = output.split('\n')
-    lines = [l for l in lines if re.match('^ [DEVILSA.]{6} [^=].*', l)]
+    lines = output.decode('ascii').split('\n')
+    lines = [l for l in lines if re.match('^ [DEVILSA.]{6} [^=].*', 'ascii')]
 
     codecs = {}
     for line in lines:

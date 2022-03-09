@@ -58,12 +58,12 @@ def find_motion():
             return None, None
 
     try:
-        help = subprocess.check_output(binary + ' -h || true', shell=True)
+        help = subprocess.check_output(binary + str(' -h || true').encode('ascii'), shell=True)
 
     except subprocess.CalledProcessError:  # not found
         return None, None
 
-    result = re.findall('motion Version ([^,]+)', help, re.IGNORECASE)
+    result = re.findall('motion Version ([^,]+)', help.decode('ascii'), re.IGNORECASE)
     version = result and result[0] or ''
 
     logging.debug('using motion version %s' % version)
