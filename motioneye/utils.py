@@ -26,8 +26,8 @@ import socket
 import sys
 import time
 import urllib
-import urllib2
-import urlparse
+import urllib.request
+import urllib.parse
 
 from PIL import Image, ImageDraw
 
@@ -666,15 +666,15 @@ def test_rtmp_url(data, callback):
 
 
 def compute_signature(method, path, body, key):
-    parts = list(urlparse.urlsplit(path))
-    query = [q for q in urlparse.parse_qsl(parts[3], keep_blank_values=True) if (q[0] != '_signature')]
+    parts = list(urllib.parse.urlsplit(path))
+    query = [q for q in urllib.parse.parse_qsl(parts[3], keep_blank_values=True) if (q[0] != '_signature')]
     query.sort(key=lambda q: q[0])
     # "safe" characters here are set to match the encodeURIComponent JavaScript counterpart
     query = [(n, urllib.quote(v, safe="!'()*~")) for (n, v) in query]
     query = '&'.join([(q[0] + '=' + q[1]) for q in query])
     parts[0] = parts[1] = ''
     parts[3] = query
-    path = urlparse.urlunsplit(parts)
+    path = urllib.parse.urlunsplit(parts)
     path = _SIGNATURE_REGEX.sub('-', path)
     key = _SIGNATURE_REGEX.sub('-', key)
 
@@ -769,7 +769,7 @@ def build_digest_header(method, url, username, password, state):
         return None
 
     entdig = None
-    p_parsed = urlparse.urlparse(url)
+    p_parsed = urllib.parse.urllib.parse(url)
     path = p_parsed.path
     if p_parsed.query:
         path += '?' + p_parsed.query
@@ -838,7 +838,7 @@ def urlopen(*args, **kwargs):
 
         kwargs.setdefault('context', ctx)
 
-    return urllib2.urlopen(*args, **kwargs)
+    return urllib.request.urlopen(*args, **kwargs)
 
 
 def build_editable_mask_file(camera_id, mask_class, mask_lines, capture_width=None, capture_height=None):

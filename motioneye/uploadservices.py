@@ -23,7 +23,7 @@ import os.path
 import StringIO
 import time
 import urllib
-import urllib2
+import urllib.request
 import pycurl
 
 from motioneye import settings
@@ -215,13 +215,13 @@ class GoogleBase:
         headers['Authorization'] = 'Bearer %s' % self._credentials['access_token']
 
         self.debug('requesting %s' % url)
-        request = urllib2.Request(url, data=body, headers=headers)
+        request = urllib.request.Request(url, data=body, headers=headers)
         if method:
             request.get_method = lambda: method
         try:
             response = utils.urlopen(request)
 
-        except urllib2.HTTPError as e:
+        except urllib.request.HTTPError as e:
             if e.code == 401 and retry_auth:  # unauthorized, access token may have expired
                 try:
                     self.debug('credentials have probably expired, refreshing them')
@@ -277,12 +277,12 @@ class GoogleBase:
         }
         body = urllib.urlencode(body)
 
-        request = urllib2.Request(self.TOKEN_URL, data=body, headers=headers)
+        request = urllib.request.Request(self.TOKEN_URL, data=body, headers=headers)
 
         try:
             response = utils.urlopen(request)
 
-        except urllib2.HTTPError as e:
+        except urllib.request.HTTPError as e:
             error = json.load(e)
             raise Exception(error.get('error_description') or error.get('error') or str(e))
 
@@ -306,12 +306,12 @@ class GoogleBase:
         }
         body = urllib.urlencode(body)
 
-        request = urllib2.Request(self.TOKEN_URL, data=body, headers=headers)
+        request = urllib.request.Request(self.TOKEN_URL, data=body, headers=headers)
 
         try:
             response = utils.urlopen(request)
 
-        except urllib2.HTTPError as e:
+        except urllib.request.HTTPError as e:
             error = json.load(e)
             raise Exception(error.get('error_description') or error.get('error') or str(e))
 
@@ -771,11 +771,11 @@ class Dropbox(UploadService):
         headers['Authorization'] = 'Bearer %s' % self._credentials['access_token']
 
         self.debug('requesting %s' % url)
-        request = urllib2.Request(url, data=body, headers=headers)
+        request = urllib.request.Request(url, data=body, headers=headers)
         try:
             response = utils.urlopen(request)
 
-        except urllib2.HTTPError as e:
+        except urllib.request.HTTPError as e:
             if e.code == 401 and retry_auth:  # unauthorized, access token may have expired
                 try:
                     self.debug('credentials have probably expired, refreshing them')
@@ -817,12 +817,12 @@ class Dropbox(UploadService):
         }
         body = urllib.urlencode(body)
 
-        request = urllib2.Request(self.TOKEN_URL, data=body, headers=headers)
+        request = urllib.request.Request(self.TOKEN_URL, data=body, headers=headers)
 
         try:
             response = utils.urlopen(request)
 
-        except urllib2.HTTPError as e:
+        except urllib.request.HTTPError as e:
             error = json.load(e)
             raise Exception(error.get('error_description') or error.get('error') or str(e))
 

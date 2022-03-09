@@ -25,7 +25,7 @@ import signal
 import socket
 import time
 import urllib
-import urllib2
+import urllib.request
 import pycurl
 import random
 import codecs

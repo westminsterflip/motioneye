@@ -24,7 +24,7 @@ import os.path
 import re
 import shlex
 import subprocess
-import urlparse
+import urllib.parse
 
 from tornado.ioloop import IOLoop
 
@@ -504,7 +504,7 @@ def add_camera(device_details):
         if device_details['port']:
             host += ':' + str(device_details['port'])
 
-        device_details['url'] = urlparse.urlunparse(
+        device_details['url'] = urllib.parse.urlunparse(
                 (device_details['scheme'], host, device_details['path'], '', '', ''))
 
     # determine the last camera id
