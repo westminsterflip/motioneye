@@ -316,7 +316,7 @@ def start_motion():
     
     # add a motion running checker
     def checker():
-        if io_loop._stopped:
+        if io_loop.is_running():
             return
             
         if not motionctl.running() and motionctl.started() and config.get_enabled_local_motion_cameras():

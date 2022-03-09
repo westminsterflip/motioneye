@@ -81,7 +81,7 @@ def add(when, func, tag=None, callback=None, **params):
     while i < len(_tasks) and _tasks[i][0] <= when:
         i += 1
 
-    logging.debug('adding task "%s" in %d seconds' % (tag or func.func_name, when - now))
+    logging.debug('adding task "%s" in %d seconds' % (tag or func.__name__, when - now))
     _tasks.insert(i, (when, func, tag, callback, params))
 
     _save()
@@ -96,7 +96,7 @@ def _check_tasks():
     while _tasks and _tasks[0][0] <= now:
         (when, func, tag, callback, params) = _tasks.pop(0)  # @UnusedVariable
         
-        logging.debug('executing task "%s"' % tag or func.func_name)
+        logging.debug('executing task "%s"' % tag or func.__name__)
         _pool.apply_async(func, kwds=params, callback=callback if callable(callback) else None)
 
         changed = True

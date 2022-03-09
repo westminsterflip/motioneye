@@ -1133,8 +1133,8 @@ def _load():
         finally:
             f.close()
 
-        for camera_id, d in data.iteritems():
-            for name, state in d.iteritems():
+        for camera_id, d in data.items():
+            for name, state in d.items():
                 camera_services = services.setdefault(camera_id, {})
                 cls = UploadService.get_service_classes().get(name)
 
@@ -1155,8 +1155,8 @@ def _save(services):
     logging.debug('saving upload services state to "%s"...' % file_path)
 
     data = {}
-    for camera_id, camera_services in services.iteritems():
-        for name, service in camera_services.iteritems():
+    for camera_id, camera_services in services.items():
+        for name, service in camera_services.items():
             data.setdefault(str(camera_id), {})[name] = service.dump()
 
     try:

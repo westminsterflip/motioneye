@@ -238,7 +238,7 @@ def set_main(main_config):
     global _main_config_cache
 
     main_config = dict(main_config)
-    for n, v in _main_config_cache.iteritems():
+    for n, v in _main_config_cache.items():
         main_config.setdefault(n, v)
     _main_config_cache = main_config
 
@@ -651,7 +651,7 @@ def main_ui_to_dict(ui):
         call_hook(ui['normal_username'], ui['normal_password'])
 
     # additional configs
-    for name, value in ui.iteritems():
+    for name, value in ui.items():
         if not name.startswith('_'):
             continue
 
@@ -681,7 +681,7 @@ def main_dict_to_ui(data):
         ui['normal_password'] = ''
 
     # additional configs
-    for name, value in data.iteritems():
+    for name, value in data.items():
         if not name.startswith('@_'):
             continue
 
@@ -1055,7 +1055,7 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     data['on_picture_save'] = '; '.join(on_picture_save)
 
     # additional configs
-    for name, value in ui.iteritems():
+    for name, value in ui.items():
         if not name.startswith('_'):
             continue
 
@@ -1518,7 +1518,7 @@ def motion_camera_dict_to_ui(data):
         ui['command_storage_exec'] = '; '.join(command_storage)
 
     # additional configs
-    for name, value in data.iteritems():
+    for name, value in data.items():
         if not name.startswith('@_'):
             continue
 
@@ -1526,7 +1526,7 @@ def motion_camera_dict_to_ui(data):
 
     # extra motion options
     extra_options = []
-    for name, value in data.iteritems():
+    for name, value in data.items():
         if name not in _USED_MOTION_OPTIONS and not name.startswith('@'):
             if isinstance(value, bool):
                 value = ['off', 'on'][value]  # boolean values should be transferred as on/off
@@ -1552,7 +1552,7 @@ def simple_mjpeg_camera_ui_to_dict(ui, prev_config=None):
     }
 
     # additional configs
-    for name, value in ui.iteritems():
+    for name, value in ui.items():
         if not name.startswith('_'):
             continue
 
@@ -1573,7 +1573,7 @@ def simple_mjpeg_camera_dict_to_ui(data):
     }
 
     # additional configs
-    for name, value in data.iteritems():
+    for name, value in data.items():
         if not name.startswith('@_'):
             continue
 
@@ -1846,7 +1846,7 @@ def _dict_to_conf(lines, data, list_names=None):
     if len(remaining) and len(lines):
         conf_lines.append('')  # add a blank line
 
-    for (name, value) in remaining.iteritems():
+    for (name, value) in remaining.items():
         if name.startswith('@_'):
             continue  # ignore additional configs
 
@@ -2030,8 +2030,8 @@ def get_additional_structure(camera, separators=False):
             if bool(result.get('camera')) != bool(camera):
                 continue
 
-            result['name'] = func.func_name
-            sections[func.func_name] = result
+            result['name'] = func.__name__
+            sections[func.__name__] = result
 
             logging.debug('additional config section: %s' % result['name'])
 
@@ -2050,8 +2050,8 @@ def get_additional_structure(camera, separators=False):
             if result['type'] == 'separator' and not separators:
                 continue
 
-            result['name'] = func.func_name
-            configs[func.func_name] = result
+            result['name'] = func.__name__
+            configs[func.__name__] = result
 
             section = sections.setdefault(result.get('section'), {})
             section.setdefault('configs', []).append(result)
@@ -2067,10 +2067,10 @@ def _get_additional_config(data, camera_id=None):
     args = [camera_id] if camera_id else []
 
     (sections, configs) = get_additional_structure(camera=bool(camera_id))
-    get_funcs = set([c.get('get') for c in configs.itervalues() if c.get('get')])
+    get_funcs = set([c.get('get') for c in configs.values() if c.get('get')])
     get_func_values = collections.OrderedDict((f, f(*args)) for f in get_funcs)
 
-    for name, section in sections.iteritems():
+    for name, section in sections.items():
         if not section.get('get'):
             continue
 
@@ -2080,7 +2080,7 @@ def _get_additional_config(data, camera_id=None):
         else:
             data['@_' + name] = get_func_values.get(section['get'])
 
-    for name, config in configs.iteritems():
+    for name, config in configs.items():
         if not config.get('get'):
             continue
 
@@ -2097,7 +2097,7 @@ def _set_additional_config(data, camera_id=None):
     (sections, configs) = get_additional_structure(camera=bool(camera_id))
 
     set_func_values = collections.OrderedDict()
-    for name, section in sections.iteritems():
+    for name, section in sections.items():
         if not section.get('set'):
             continue
 
@@ -2110,7 +2110,7 @@ def _set_additional_config(data, camera_id=None):
         else:
             set_func_values[section['set']] = data['@_' + name]
 
-    for name, config in configs.iteritems():
+    for name, config in configs.items():
         if not config.get('set'):
             continue
 
@@ -2123,5 +2123,5 @@ def _set_additional_config(data, camera_id=None):
         else:
             set_func_values[config['set']] = data['@_' + name]
 
-    for func, value in set_func_values.iteritems():
+    for func, value in set_func_values.items():
         func(*(args + [value]))

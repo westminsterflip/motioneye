@@ -60,7 +60,7 @@ def main(parser, args):
     elif options.method == 'POSTj':  # json
         headers['Content-Type'] = 'application/json'
         data = urllib.parse.parse_qs(parts.query)
-        data = {k: v[0] for (k, v) in data.iteritems()}
+        data = {k: v[0] for (k, v) in data.items()}
         data = json.dumps(data)
         url = options.url.split('?')[0]
 
