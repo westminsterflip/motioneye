@@ -900,7 +900,7 @@ def build_editable_mask_file(camera_id, mask_class, mask_lines, capture_width=No
 
     if ry:
         line = mask_lines[line_index_func(ny)]
-        for x in xrange(nx):
+        for x in range(nx):
             if line & (1 << (MASK_WIDTH - 1 - x)):
                 dr.rectangle((x * rw, ny * rh, (x + 1) * rw - 1, ny * rh + ry - 1), fill=0)
 

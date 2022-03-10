@@ -198,7 +198,6 @@ def configure_signals():
         # shut down the IO loop if it has been started
         io_loop = IOLoop.instance()
         io_loop.stop()
-        io_loop.close()
         
     def child_handler(signal, frame):
         # this is required for the multiprocessing mechanism to work
