@@ -297,7 +297,7 @@ def get_camera_ids(filter_valid=True):
 
     camera_ids = []
 
-    pattern = '^' + _CAMERA_CONFIG_FILE_NAME.replace('%(id)s', '(\d+)') + '$'
+    pattern = '^' + _CAMERA_CONFIG_FILE_NAME.replace('%(id)s', r'(\d+)') + '$'
     for name in ls:
         match = re.match(pattern, name)
         if match:
@@ -1658,15 +1658,28 @@ def restore(content):
 
     logging.info('restoring config from backup file')
 
-    cmd = ['tar', 'zxC', settings.CONF_PATH]
+    cmd = ['tar', 'zxC', settings.CONF_PATH + '/tmp/']
 
     try:
         p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         msg = p.communicate(content)[0]
+
+        try:
+            size = os.path.getsize(settings.CONF_PATH + '/tmp/' + _MAIN_CONFIG_FILE_NAME)
+        except OSError:
+            logging.error('failed to restore configuration: incorrect config name')
+            return False
+
+        if size > 5000:
+            logging.error("failed to restore configuration: this doesn't look like a config file")
+            return False
+
         if msg:
             logging.error('failed to restore configuration: %s' % msg)
             return False
 
+        os.replace(settings.CONF_PATH + '/tmp/' + _MAIN_CONFIG_FILE_NAME,
+                   settings.CONF_PATH + '/' + _MAIN_CONFIG_FILE_NAME)
         logging.debug('configuration restored successfully')
 
         if settings.ENABLE_REBOOT:
