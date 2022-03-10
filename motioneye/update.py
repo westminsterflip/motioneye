@@ -41,7 +41,7 @@ def _get_os_version_lsb_release():
         if version.lower() == 'rolling':
             version = ''
         
-        return name, version
+        return name.decode('ascii'), version.decode('ascii')
 
     except:
         return _get_os_version_uname()
