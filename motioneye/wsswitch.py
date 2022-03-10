@@ -18,9 +18,8 @@
 import datetime
 import functools
 import logging
-import asyncio
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 
 from motioneye import config
 from motioneye import motionctl
@@ -28,12 +27,7 @@ from motioneye import utils
 
 
 def start():
-    #io_loop = IOLoop.instance()
-    #io_loop.add_timeout(datetime.timedelta(seconds=1), _check_ws)
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
     io_loop.call_later(1, _check_ws)
 
 
@@ -79,12 +73,7 @@ def _during_working_schedule(now, working_schedule):
 
 def _check_ws():
     # schedule the next call
-    #io_loop = IOLoop.instance()
-    #io_loop.add_timeout(datetime.timedelta(seconds=10), _check_ws)
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
     io_loop.call_later(10, _check_ws)
 
     if not motionctl.running():

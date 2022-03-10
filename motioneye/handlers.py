@@ -1,4 +1,3 @@
-
 # Copyright (c) 2013 Calin Crisan
 # This file is part of motionEye.
 #
@@ -23,9 +22,8 @@ import os
 import re
 import socket
 import subprocess
-import asyncio
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, StaticFileHandler, HTTPError, asynchronous
 
 from motioneye import config
@@ -135,32 +133,28 @@ class BaseHandler(RequestHandler):
             up = utils.parse_basic_header(self.request.headers['Authorization'])
             if up:
                 if (up['username'] == admin_username and
-                    admin_password in (up['password'], hashlib.sha1(up['password']).hexdigest())):
-
+                        admin_password in (up['password'], hashlib.sha1(up['password']).hexdigest())):
                     return 'admin'
 
                 if (up['username'] == normal_username and
-                    normal_password in (up['password'], hashlib.sha1(up['password']).hexdigest())):
-
+                        normal_password in (up['password'], hashlib.sha1(up['password']).hexdigest())):
                     return 'normal'
 
         if (username == admin_username and
-            (signature == utils.compute_signature(self.request.method, self.request.uri,
-                                                  self.request.body, admin_password) or
-             signature == utils.compute_signature(self.request.method, self.request.uri,
-                                                  self.request.body, admin_hash))):
-
+                (signature == utils.compute_signature(self.request.method, self.request.uri,
+                                                      self.request.body, admin_password) or
+                 signature == utils.compute_signature(self.request.method, self.request.uri,
+                                                      self.request.body, admin_hash))):
             return 'admin'
 
         if not username and not normal_password:  # no authentication required for normal user
             return 'normal'
 
         if (username == normal_username and
-            (signature == utils.compute_signature(self.request.method, self.request.uri,
-                                                  self.request.body, normal_password) or
-             signature == utils.compute_signature(self.request.method, self.request.uri,
-                                                  self.request.body, normal_hash))):
-
+                (signature == utils.compute_signature(self.request.method, self.request.uri,
+                                                      self.request.body, normal_password) or
+                 signature == utils.compute_signature(self.request.method, self.request.uri,
+                                                      self.request.body, normal_hash))):
             return 'normal'
 
         if username and username != '_' and login:
@@ -185,7 +179,7 @@ class BaseHandler(RequestHandler):
             else:
                 logging.error(str(exception), exc_info=True)
                 self.set_status(500)
-                self.finish_json({'error':  'internal server error'})
+                self.finish_json({'error': 'internal server error'})
 
         except RuntimeError:
             pass  # nevermind
@@ -330,7 +324,7 @@ class ConfigHandler(BaseHandler):
                 def on_response(remote_ui_config=None, error=None):
                     if error:
                         msg = 'Failed to get remote camera configuration for %(url)s: %(msg)s.' % {
-                                'url': remote.pretty_camera_url(local_config), 'msg': error}
+                            'url': remote.pretty_camera_url(local_config), 'msg': error}
 
                         return self.finish_json({'error': msg})
 
@@ -470,12 +464,7 @@ class ConfigHandler(BaseHandler):
                     def call_reboot():
                         powerctl.reboot()
 
-                    #io_loop = IOLoop.instance()
-                    #io_loop.add_timeout(datetime.timedelta(seconds=2), call_reboot)
-                    try:
-                        io_loop = asyncio.get_running_loop()
-                    except RuntimeError:
-                        io_loop = asyncio.new_event_loop()
+                    io_loop = IOLoop.instance()
                     io_loop.call_later(2, call_reboot)
                     return self.finish({'reload': False, 'reboot': True, 'error': None})
 
@@ -810,7 +799,7 @@ class ConfigHandler(BaseHandler):
                 ConfigHandler._upload_service_test_info = (self, service_name)
 
                 tasks.add(0, uploadservices.test_access, tag='uploadservices.test(%s)' % service_name,
-                        camera_id=camera_id, service_name=service_name, data=data, callback=self._on_test_result)
+                          camera_id=camera_id, service_name=service_name, data=data, callback=self._on_test_result)
 
             elif what == 'email':
                 from motioneye import sendmail
@@ -1013,7 +1002,7 @@ class PictureHandler(BaseHandler):
             # get_current_picture() will make sure to start a client, but a jpeg frame is not available right away;
             # wait at most 5 seconds and retry every 200 ms.
             if not picture and retry < 25:
-                #return IOLoop.instance().add_timeout(datetime.timedelta(seconds=0.2), self.current,camera_id=camera_id, retry=retry + 1)
+                # return IOLoop.instance().add_timeout(datetime.timedelta(seconds=0.2), self.current,camera_id=camera_id, retry=retry + 1)
                 return asyncio.get_running_loop().call_later(0.2, self.current, camera_id=camera_id, retry=retry + 1)
 
             self.set_cookie('motion_detected_' + camera_id_str, str(motionctl.is_motion_detected(camera_id)).lower())
@@ -1054,13 +1043,13 @@ class PictureHandler(BaseHandler):
                 })
 
             mediafiles.list_media(camera_config, media_type='picture',
-                    callback=on_media_list, prefix=self.get_argument('prefix', None))
+                                  callback=on_media_list, prefix=self.get_argument('prefix', None))
 
         elif utils.is_remote_camera(camera_config):
             def on_response(remote_list=None, error=None):
                 if error:
                     return self.finish_json({'error': 'Failed to get picture list for %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                        'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                 self.finish_json(remote_list)
 
@@ -1074,8 +1063,8 @@ class PictureHandler(BaseHandler):
         camera_config = config.get_camera(camera_id)
 
         if (utils.is_local_motion_camera(camera_config) or
-            utils.is_simple_mjpeg_camera(camera_config) or
-            self.get_argument('title', None) is not None):
+                utils.is_simple_mjpeg_camera(camera_config) or
+                self.get_argument('title', None) is not None):
 
             self.render('main.html',
                         frame=True,
@@ -1110,7 +1099,7 @@ class PictureHandler(BaseHandler):
     @BaseHandler.auth()
     def download(self, camera_id, filename):
         logging.debug('downloading picture %(filename)s of camera %(id)s' % {
-                'filename': filename, 'id': camera_id})
+            'filename': filename, 'id': camera_id})
 
         camera_config = config.get_camera(camera_id)
         if utils.is_local_motion_camera(camera_config):
@@ -1126,7 +1115,7 @@ class PictureHandler(BaseHandler):
             def on_response(response=None, error=None):
                 if error:
                     return self.finish_json({'error': 'Failed to download picture from %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                        'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                 pretty_filename = os.path.basename(filename)  # no camera name available w/o additional request
                 self.set_header('Content-Type', 'image/jpeg')
@@ -1142,13 +1131,13 @@ class PictureHandler(BaseHandler):
     @BaseHandler.auth()
     def preview(self, camera_id, filename):
         logging.debug('previewing picture %(filename)s of camera %(id)s' % {
-                'filename': filename, 'id': camera_id})
+            'filename': filename, 'id': camera_id})
 
         camera_config = config.get_camera(camera_id)
         if utils.is_local_motion_camera(camera_config):
             content = mediafiles.get_media_preview(camera_config, filename, 'picture',
-                    width=self.get_argument('width', None),
-                    height=self.get_argument('height', None))
+                                                   width=self.get_argument('width', None),
+                                                   height=self.get_argument('height', None))
 
             if content:
                 self.set_header('Content-Type', 'image/jpeg')
@@ -1171,9 +1160,9 @@ class PictureHandler(BaseHandler):
                 self.finish(content)
 
             remote.get_media_preview(camera_config, filename=filename, media_type='picture',
-                    width=self.get_argument('width', None),
-                    height=self.get_argument('height', None),
-                    callback=on_response)
+                                     width=self.get_argument('width', None),
+                                     height=self.get_argument('height', None),
+                                     callback=on_response)
 
         else:  # assuming simple mjpeg camera
             raise HTTPError(400, 'unknown operation')
@@ -1181,7 +1170,7 @@ class PictureHandler(BaseHandler):
     @BaseHandler.auth(admin=True)
     def delete(self, camera_id, filename):
         logging.debug('deleting picture %(filename)s of camera %(id)s' % {
-                'filename': filename, 'id': camera_id})
+            'filename': filename, 'id': camera_id})
 
         camera_config = config.get_camera(camera_id)
         if utils.is_local_motion_camera(camera_config):
@@ -1196,7 +1185,7 @@ class PictureHandler(BaseHandler):
             def on_response(response=None, error=None):
                 if error:
                     return self.finish_json({'error': 'Failed to delete picture from %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                        'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                 self.finish_json()
 
@@ -1212,7 +1201,7 @@ class PictureHandler(BaseHandler):
 
         if key:
             logging.debug('serving zip file for group "%(group)s" of camera %(id)s with key %(key)s' % {
-                    'group': group or 'ungrouped', 'id': camera_id, 'key': key})
+                'group': group or 'ungrouped', 'id': camera_id, 'key': key})
 
             if utils.is_local_motion_camera(camera_config):
                 data = mediafiles.get_prepared_cache(key)
@@ -1232,7 +1221,7 @@ class PictureHandler(BaseHandler):
                 def on_response(response=None, error=None):
                     if error:
                         return self.finish_json({'error': 'Failed to download zip file from %(url)s: %(msg)s.' % {
-                                'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                     self.set_header('Content-Type', response['content_type'])
                     self.set_header('Content-Disposition', response['content_disposition'])
@@ -1246,7 +1235,7 @@ class PictureHandler(BaseHandler):
 
         else:  # prepare
             logging.debug('preparing zip file for group "%(group)s" of camera %(id)s' % {
-                    'group': group or 'ungrouped', 'id': camera_id})
+                'group': group or 'ungrouped', 'id': camera_id})
 
             if utils.is_local_motion_camera(camera_config):
                 def on_zip(data):
@@ -1255,7 +1244,7 @@ class PictureHandler(BaseHandler):
 
                     key = mediafiles.set_prepared_cache(data)
                     logging.debug('prepared zip file for group "%(group)s" of camera %(id)s with key %(key)s' % {
-                            'group': group or 'ungrouped', 'id': camera_id, 'key': key})
+                        'group': group or 'ungrouped', 'id': camera_id, 'key': key})
                     self.finish_json({'key': key})
 
                 mediafiles.get_zipped_content(camera_config, media_type='picture', group=group, callback=on_zip)
@@ -1264,7 +1253,7 @@ class PictureHandler(BaseHandler):
                 def on_response(response=None, error=None):
                     if error:
                         return self.finish_json({'error': 'Failed to make zip file at %(url)s: %(msg)s.' % {
-                                'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                     self.finish_json({'key': response['key']})
 
@@ -1281,7 +1270,7 @@ class PictureHandler(BaseHandler):
 
         if key:  # download
             logging.debug('serving timelapse movie for group "%(group)s" of camera %(id)s with key %(key)s' % {
-                    'group': group or 'ungrouped', 'id': camera_id, 'key': key})
+                'group': group or 'ungrouped', 'id': camera_id, 'key': key})
 
             if utils.is_local_motion_camera(camera_config):
                 data = mediafiles.get_prepared_cache(key)
@@ -1302,7 +1291,7 @@ class PictureHandler(BaseHandler):
                 def on_response(response=None, error=None):
                     if error:
                         msg = 'Failed to download timelapse movie from %(url)s: %(msg)s.' % {
-                                'url': remote.pretty_camera_url(camera_config), 'msg': error}
+                            'url': remote.pretty_camera_url(camera_config), 'msg': error}
 
                         return self.finish_json({'error': msg})
 
@@ -1317,14 +1306,14 @@ class PictureHandler(BaseHandler):
 
         elif check:
             logging.debug('checking timelapse movie status for group "%(group)s" of camera %(id)s' % {
-                    'group': group or 'ungrouped', 'id': camera_id})
+                'group': group or 'ungrouped', 'id': camera_id})
 
             if utils.is_local_motion_camera(camera_config):
                 status = mediafiles.check_timelapse_movie()
                 if status['progress'] == -1 and status['data']:
                     key = mediafiles.set_prepared_cache(status['data'])
                     logging.debug('prepared timelapse movie for group "%(group)s" of camera %(id)s with key %(key)s' % {
-                            'group': group or 'ungrouped', 'id': camera_id, 'key': key})
+                        'group': group or 'ungrouped', 'id': camera_id, 'key': key})
                     self.finish_json({'key': key, 'progress': -1})
 
                 else:
@@ -1334,7 +1323,7 @@ class PictureHandler(BaseHandler):
                 def on_response(response=None, error=None):
                     if error:
                         msg = 'Failed to check timelapse movie progress at %(url)s: %(msg)s.' % {
-                                'url': remote.pretty_camera_url(camera_config), 'msg': error}
+                            'url': remote.pretty_camera_url(camera_config), 'msg': error}
 
                         return self.finish_json({'error': msg})
 
@@ -1354,7 +1343,7 @@ class PictureHandler(BaseHandler):
             framerate = int(self.get_argument('framerate'))
 
             msg = 'preparing timelapse movie for group "%(group)s" of camera %(id)s with rate %(framerate)s/%(int)s' % {
-                    'group': group or 'ungrouped', 'id': camera_id, 'framerate': framerate, 'int': interval}
+                'group': group or 'ungrouped', 'id': camera_id, 'framerate': framerate, 'int': interval}
             logging.debug(msg)
 
             if utils.is_local_motion_camera(camera_config):
@@ -1370,7 +1359,7 @@ class PictureHandler(BaseHandler):
                 def on_status(response=None, error=None):
                     if error:
                         return self.finish_json({'error': 'Failed to make timelapse movie at %(url)s: %(msg)s.' % {
-                                'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                     if response['progress'] != -1:
                         return self.finish_json({'progress': response['progress']})  # timelapse already active
@@ -1378,7 +1367,7 @@ class PictureHandler(BaseHandler):
                     def on_make(response=None, error=None):
                         if error:
                             return self.finish_json({'error': 'Failed to make timelapse movie at %(url)s: %(msg)s.' % {
-                                    'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                                'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                         self.finish_json({'progress': -1})
 
@@ -1392,7 +1381,7 @@ class PictureHandler(BaseHandler):
     @BaseHandler.auth(admin=True)
     def delete_all(self, camera_id, group):
         logging.debug('deleting picture group "%(group)s" of camera %(id)s' % {
-                'group': group or 'ungrouped', 'id': camera_id})
+            'group': group or 'ungrouped', 'id': camera_id})
 
         camera_config = config.get_camera(camera_id)
         if utils.is_local_motion_camera(camera_config):
@@ -1407,7 +1396,7 @@ class PictureHandler(BaseHandler):
             def on_response(response=None, error=None):
                 if error:
                     return self.finish_json({'error': 'Failed to delete picture group at %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                        'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                 self.finish_json()
 
@@ -1476,13 +1465,13 @@ class MovieHandler(BaseHandler):
                 })
 
             mediafiles.list_media(camera_config, media_type='movie',
-                    callback=on_media_list, prefix=self.get_argument('prefix', None))
+                                  callback=on_media_list, prefix=self.get_argument('prefix', None))
 
         elif utils.is_remote_camera(camera_config):
             def on_response(remote_list=None, error=None):
                 if error:
                     return self.finish_json({'error': 'Failed to get movie list for %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                        'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                 self.finish_json(remote_list)
 
@@ -1495,13 +1484,13 @@ class MovieHandler(BaseHandler):
     @BaseHandler.auth()
     def preview(self, camera_id, filename):
         logging.debug('previewing movie %(filename)s of camera %(id)s' % {
-                'filename': filename, 'id': camera_id})
+            'filename': filename, 'id': camera_id})
 
         camera_config = config.get_camera(camera_id)
         if utils.is_local_motion_camera(camera_config):
             content = mediafiles.get_media_preview(camera_config, filename, 'movie',
-                    width=self.get_argument('width', None),
-                    height=self.get_argument('height', None))
+                                                   width=self.get_argument('width', None),
+                                                   height=self.get_argument('height', None))
 
             if content:
                 self.set_header('Content-Type', 'image/jpeg')
@@ -1524,9 +1513,9 @@ class MovieHandler(BaseHandler):
                 self.finish(content)
 
             remote.get_media_preview(camera_config, filename=filename, media_type='movie',
-                    width=self.get_argument('width', None),
-                    height=self.get_argument('height', None),
-                    callback=on_response)
+                                     width=self.get_argument('width', None),
+                                     height=self.get_argument('height', None),
+                                     callback=on_response)
 
         else:  # assuming simple mjpeg camera
             raise HTTPError(400, 'unknown operation')
@@ -1534,7 +1523,7 @@ class MovieHandler(BaseHandler):
     @BaseHandler.auth(admin=True)
     def delete(self, camera_id, filename):
         logging.debug('deleting movie %(filename)s of camera %(id)s' % {
-                'filename': filename, 'id': camera_id})
+            'filename': filename, 'id': camera_id})
 
         camera_config = config.get_camera(camera_id)
         if utils.is_local_motion_camera(camera_config):
@@ -1549,7 +1538,7 @@ class MovieHandler(BaseHandler):
             def on_response(response=None, error=None):
                 if error:
                     return self.finish_json({'error': 'Failed to delete movie from %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                        'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                 self.finish_json()
 
@@ -1561,7 +1550,7 @@ class MovieHandler(BaseHandler):
     @BaseHandler.auth(admin=True)
     def delete_all(self, camera_id, group):
         logging.debug('deleting movie group "%(group)s" of camera %(id)s' % {
-                'group': group or 'ungrouped', 'id': camera_id})
+            'group': group or 'ungrouped', 'id': camera_id})
 
         camera_config = config.get_camera(camera_id)
         if utils.is_local_motion_camera(camera_config):
@@ -1576,7 +1565,7 @@ class MovieHandler(BaseHandler):
             def on_response(response=None, error=None):
                 if error:
                     return self.finish_json({'error': 'Failed to delete movie group at %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                        'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                 self.finish_json()
 
@@ -1595,9 +1584,9 @@ class MoviePlaybackHandler(StaticFileHandler, BaseHandler):
 
     @asynchronous
     @BaseHandler.auth()
-    def get(self,  camera_id, filename=None, include_body=True):
+    def get(self, camera_id, filename=None, include_body=True):
         logging.debug('downloading movie %(filename)s of camera %(id)s' % {
-                'filename': filename, 'id': camera_id})
+            'filename': filename, 'id': camera_id})
 
         self.pretty_filename = os.path.basename(filename)
 
@@ -1618,7 +1607,7 @@ class MoviePlaybackHandler(StaticFileHandler, BaseHandler):
             def on_response(response=None, error=None):
                 if error:
                     return self.finish_json({'error': 'Failed to download movie from %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(camera_config), 'msg': error}})
+                        'url': remote.pretty_camera_url(camera_config), 'msg': error}})
 
                 # check if the file has been created by another request while we were fetching the movie
                 if not os.path.isfile(tmpfile):
@@ -1630,7 +1619,7 @@ class MoviePlaybackHandler(StaticFileHandler, BaseHandler):
 
             # we will cache the movie since it takes a while to fetch from the remote camera
             # and we may be going to play it back in the browser, which will fetch the video in chunks
-            tmpfile = self.tmpdir+'/'+self.pretty_filename
+            tmpfile = self.tmpdir + '/' + self.pretty_filename
             if os.path.isfile(tmpfile):
                 # have a cached copy, update the timestamp so it's not flushed
                 import time
@@ -1666,8 +1655,8 @@ class MoviePlaybackHandler(StaticFileHandler, BaseHandler):
 class MovieDownloadHandler(MoviePlaybackHandler):
     def set_extra_headers(self, filename):
         if (self.get_status() in (200, 304)):
-            self.set_header('Content-Disposition','attachment; filename=' + self.pretty_filename + ';')
-            self.set_header('Expires','0')
+            self.set_header('Content-Disposition', 'attachment; filename=' + self.pretty_filename + ';')
+            self.set_header('Expires', '0')
 
 
 class ActionHandler(BaseHandler):
@@ -1682,7 +1671,7 @@ class ActionHandler(BaseHandler):
             def on_response(error=None):
                 if error:
                     msg = 'Failed to execute action on remote camera at %(url)s: %(msg)s.' % {
-                            'url': remote.pretty_camera_url(local_config), 'msg': error}
+                        'url': remote.pretty_camera_url(local_config), 'msg': error}
 
                     return self.finish_json({'error': msg})
 
@@ -1714,12 +1703,7 @@ class ActionHandler(BaseHandler):
         self.p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         self.command = command
 
-        #self.io_loop = IOLoop.instance()
-        #self.io_loop.add_timeout(datetime.timedelta(milliseconds=100), self.check_command)
-        try:
-            io_loop = asyncio.get_running_loop()
-        except RuntimeError:
-            io_loop = asyncio.new_event_loop()
+        self.io_loop = IOLoop.instance()
         self.io_loop.call_later(0.1, self.check_command)
 
     def check_command(self):
@@ -1743,7 +1727,6 @@ class ActionHandler(BaseHandler):
             self.finish_json({'status': exit_status})
 
         else:
-            #self.io_loop.add_timeout(datetime.timedelta(milliseconds=100), self.check_command)
             self.io_loop.call_later(0.1, self.check_command)
 
     def snapshot(self, camera_id):
@@ -1786,7 +1769,7 @@ class RelayEventHandler(BaseHandler):
 
         else:
             logging.debug('received relayed event %(event)s for motion camera id %(id)s (camera id %(cid)s)' % {
-                    'event': event, 'id': motion_camera_id, 'cid': camera_id})
+                'event': event, 'id': motion_camera_id, 'cid': camera_id})
 
         camera_config = config.get_camera(camera_id)
         if not utils.is_local_motion_camera(camera_config):
@@ -1808,7 +1791,7 @@ class RelayEventHandler(BaseHandler):
 
             # generate preview (thumbnail)
             tasks.add(5, mediafiles.make_movie_preview, tag='make_movie_preview(%s)' % filename,
-                    camera_config=camera_config, full_path=filename)
+                      camera_config=camera_config, full_path=filename)
 
             # upload to external service
             if camera_config['@upload_enabled'] and camera_config['@upload_movie']:
@@ -1830,15 +1813,15 @@ class RelayEventHandler(BaseHandler):
         service_name = camera_config['@upload_service']
 
         tasks.add(5, uploadservices.upload_media_file, tag='upload_media_file(%s)' % filename,
-                camera_id=camera_id, service_name=service_name,
-                camera_name=camera_config['camera_name'],
-                target_dir=camera_config['@upload_subfolders'] and camera_config['target_dir'],
-                filename=filename)
+                  camera_id=camera_id, service_name=service_name,
+                  camera_name=camera_config['camera_name'],
+                  target_dir=camera_config['@upload_subfolders'] and camera_config['target_dir'],
+                  filename=filename)
 
 
 class LogHandler(BaseHandler):
     LOGS = {
-        'motion': (os.path.join(settings.LOG_PATH, 'motion.log'),  'motion.log'),
+        'motion': (os.path.join(settings.LOG_PATH, 'motion.log'), 'motion.log'),
     }
 
     @BaseHandler.auth(admin=True)
@@ -1907,21 +1890,11 @@ class PowerHandler(BaseHandler):
             self.reboot()
 
     def shut_down(self):
-        #io_loop = IOLoop.instance()
-        #io_loop.add_timeout(datetime.timedelta(seconds=2), powerctl.shut_down)
-        try:
-            io_loop = asyncio.get_running_loop()
-        except RuntimeError:
-            io_loop = asyncio.new_event_loop()
-        io_loop.call_later(2,powerctl.shut_down)
+        io_loop = IOLoop.instance()
+        io_loop.call_later(2, powerctl.shut_down)
 
     def reboot(self):
-        #io_loop = IOLoop.instance()
-        #io_loop.add_timeout(datetime.timedelta(seconds=2), powerctl.reboot)
-        try:
-            io_loop = asyncio.get_running_loop()
-        except RuntimeError:
-            io_loop = asyncio.new_event_loop()
+        io_loop = IOLoop.instance()
         io_loop.call_later(2, powerctl.reboot)
 
 

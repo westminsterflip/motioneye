@@ -24,9 +24,8 @@ import re
 import signal
 import sys
 import time
-import asyncio
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 from tornado.web import Application
 
 from motioneye import handlers
@@ -197,12 +196,9 @@ def configure_signals():
         logging.info('interrupt signal received, shutting down...')
 
         # shut down the IO loop if it has been started
-        try:
-            io_loop = asyncio.get_running_loop()
-            io_loop.stop()
-
-        except RuntimeError:
-            io_loop.close() #should be safe to close though probably not necessary
+        io_loop = IOLoop.instance()
+        io_loop.stop()
+        io_loop.close()
         
     def child_handler(signal, frame):
         # this is required for the multiprocessing mechanism to work
@@ -319,16 +315,11 @@ def start_motion():
 
     print("starting motion")
 
-    #io_loop = IOLoop.instance()
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
-    io_loop.run_forever()
+    io_loop = IOLoop.instance()
 
     # add a motion running checker
     def checker():
-        if not io_loop.is_running(): #not equivalent to checking if stopped but should work mostly
+        if io_loop.closing:  # not equivalent to checking if stopped, but _stopped was removed
             return
             
         if not motionctl.running() and motionctl.started() and config.get_enabled_local_motion_cameras():
@@ -407,11 +398,10 @@ def run():
     application.listen(settings.PORT, settings.LISTEN)
     logging.info('server started')
     
-    #io_loop = IOLoop.instance()
+    io_loop = IOLoop.instance()
     # we need to reset the loop's PID to fix PID checks when running in daemon mode
-    #io_loop._pid = os.getpid()
-    #io_loop.start()
-    #hopefully not necessary with python's event loops
+    io_loop._pid = os.getpid()  # not sure this works with tornado 5
+    io_loop.start()
 
     logging.info('server stopped')
     

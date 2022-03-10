@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import subprocess
+
 from motioneye import utils
 
 

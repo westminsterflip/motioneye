@@ -19,9 +19,8 @@ import datetime
 import logging
 import re
 import subprocess
-import asyncio
 
-#from tornado import ioloop
+from tornado import ioloop
 
 
 def get_os_version():
@@ -120,6 +119,5 @@ def perform_update(version):
 
     # schedule the actual update for two seconds later,
     # since we want to be able to respond to the request right away
-    #ioloop.IOLoop.instance().add_timeout(datetime.timedelta(seconds=2), platformupdate.perform_update, version=version)
-    asyncio.get_running_loop().call_later(2, platformupdate.perform_update, version=version)
+    ioloop.IOLoop.instance().call_later(2, platformupdate.perform_update, version=version)
 

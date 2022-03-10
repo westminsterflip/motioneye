@@ -22,9 +22,8 @@ import re
 import signal
 import subprocess
 import time
-import asyncio
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 
 from motioneye import mediafiles
 from motioneye import powerctl
@@ -79,10 +78,8 @@ def start(deferred=False):
     from motioneye import mjpgclient
 
     if deferred:
-        #io_loop = IOLoop.instance()
-        #io_loop.add_callback(start, deferred=False)
-        io_loop = asyncio.get_running_loop()
-        io_loop.call_soon(start, deferred=False)
+        io_loop = IOLoop.instance()
+        io_loop.add_callback(start, deferred=False)
 
     global _started
 

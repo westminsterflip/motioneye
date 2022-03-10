@@ -25,9 +25,8 @@ import re
 import shlex
 import subprocess
 import urllib.parse
-import asyncio
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 
 from motioneye import diskctl
 from motioneye import motionctl
@@ -1680,12 +1679,7 @@ def restore(content):
             def later():
                 powerctl.reboot()
 
-            #io_loop = IOLoop.instance()
-            #io_loop.add_timeout(datetime.timedelta(seconds=2), later)
-            try:
-                io_loop = asyncio.get_running_loop()
-            except RuntimeError:
-                io_loop = asyncio.new_event_loop()
+            io_loop = IOLoop.instance()
             io_loop.call_later(2, later)
 
         else:

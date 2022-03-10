@@ -28,13 +28,12 @@ import time
 import urllib
 import urllib.request
 import urllib.parse
-import asyncio
 
 from PIL import Image, ImageDraw
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.iostream import IOStream
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 
 from motioneye import settings
 
@@ -463,11 +462,7 @@ def test_rtsp_url(data, callback):
     timeout = [None]
     stream = None
 
-    #io_loop = IOLoop.instance()
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
 
     def connect():
         if send_auth[0]:
@@ -482,14 +477,12 @@ def test_rtsp_url(data, callback):
         stream.set_close_callback(on_close)
         stream.connect((host, int(port)), on_connect)
 
-        #timeout[0] = io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT), functools.partial(on_connect, _timeout=True))
-        timeout[0] = io_loop.call_later(settings.MJPG_CLIENT_TIMEOUT, functools.partial(on_connect, timeout=True))
+        timeout[0] = io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT), functools.partial(on_connect, _timeout=True))
 
         return stream
 
     def on_connect(_timeout=False):
-        #io_loop.remove_timeout(timeout[0])
-        timeout[0].cancel()
+        io_loop.remove_timeout(timeout[0])
 
         if _timeout:
             return handle_error('timeout connecting to rtsp netcam')
@@ -730,7 +723,7 @@ def parse_basic_header(header):
     except:
         return None
 
-    parts = decoded.split(':', 1)
+    parts = decoded.split(b':', 1)
     if len(parts) < 2:
         return None
 
@@ -775,7 +768,7 @@ def build_digest_header(method, url, username, password, state):
         return None
 
     entdig = None
-    p_parsed = urllib.parse.urllib.parse(url)
+    p_parsed = urllib.parse.urlparse(url)
     path = p_parsed.path
     if p_parsed.query:
         path += '?' + p_parsed.query
@@ -896,9 +889,9 @@ def build_editable_mask_file(camera_id, mask_class, mask_lines, capture_width=No
     im = Image.new('L', (width, height), 255)  # all white
     dr = ImageDraw.Draw(im)
 
-    for y in xrange(ny):
+    for y in range(ny):
         line = mask_lines[line_index_func(y)]
-        for x in xrange(nx):
+        for x in range(nx):
             if line & (1 << (MASK_WIDTH - 1 - x)):
                 dr.rectangle((x * rw, y * rh, (x + 1) * rw - 1, (y + 1) * rh - 1), fill=0)
 
@@ -993,9 +986,9 @@ def parse_editable_mask_file(camera_id, mask_class, capture_width=None, capture_
 
     # parse the image contents and build the mask lines
     mask_lines = [width, height]
-    for y in xrange(ny):
+    for y in range(ny):
         bits = []
-        for x in xrange(nx):
+        for x in range(nx):
             px = int((x + 0.5) * rw)
             py = int((y + 0.5) * rh)
             pixel = pixels[py * width + px]
@@ -1017,7 +1010,7 @@ def parse_editable_mask_file(camera_id, mask_class, capture_width=None, capture_
 
     if ry:
         bits = []
-        for x in xrange(nx):
+        for x in range(nx):
             px = int((x + 0.5) * rw)
             py = int(ny * rh + ry / 2)
             pixel = pixels[py * width + px]

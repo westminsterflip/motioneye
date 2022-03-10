@@ -22,9 +22,8 @@ import logging
 import multiprocessing
 import os
 import time
-import asyncio
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 
 from motioneye import settings
 
@@ -44,12 +43,7 @@ _pool = None
 def start():
     global _pool
 
-    #io_loop = IOLoop.instance()
-    #io_loop.add_timeout(datetime.timedelta(seconds=_INTERVAL), _check_tasks)
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
     io_loop.call_later(_INTERVAL, _check_tasks)
     
     def init_pool_process():
@@ -94,12 +88,7 @@ def add(when, func, tag=None, callback=None, **params):
 
 
 def _check_tasks():
-    #io_loop = IOLoop.instance()
-    #io_loop.add_timeout(datetime.timedelta(seconds=_INTERVAL), _check_tasks)
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
     io_loop.call_later(_INTERVAL, _check_tasks)
     
     now = time.time()

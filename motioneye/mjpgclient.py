@@ -21,9 +21,8 @@ import logging
 import re
 import socket
 import time
-import asyncio
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 from tornado.iostream import IOStream
 
 from motioneye import config
@@ -247,12 +246,7 @@ class MjpgClient(IOStream):
 
 def start():
     # schedule the garbage collector
-    #io_loop = IOLoop.instance()
-    #io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT), _garbage_collector)
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
     io_loop.call_later(settings.MJPG_CLIENT_TIMEOUT, _garbage_collector)
 
 
@@ -305,12 +299,7 @@ def close_all(invalidate=False):
 
 
 def _garbage_collector():
-    #io_loop = IOLoop.instance()
-    #io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT), _garbage_collector)
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
     io_loop.call_later(settings.MJPG_CLIENT_TIMEOUT, _garbage_collector)
 
     now = time.time()

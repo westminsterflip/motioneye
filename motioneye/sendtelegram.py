@@ -33,9 +33,8 @@ import uuid
 import binascii
 import datetime
 import json
-import asyncio
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 
 from motioneye import settings
 
@@ -74,11 +73,7 @@ def make_message(message, camera_id, moment, timespan, callback):
     camera_config = config.get_camera(camera_id)
     
     # we must start the IO loop for the media list subprocess polling
-    #io_loop = IOLoop.instance()
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
 
     def on_media_files(media_files):
         io_loop.stop()

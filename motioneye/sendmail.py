@@ -23,7 +23,6 @@ import signal
 import smtplib
 import socket
 import time
-import asyncio
 
 from email import encoders
 from email.mime.text import MIMEText
@@ -31,10 +30,9 @@ from email.mime import multipart
 from email.mime import base
 from email.utils import formatdate
 
-#from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop
 
 from motioneye import settings
-
 from motioneye import config
 from motioneye import mediafiles
 from motioneye import motionctl
@@ -85,14 +83,9 @@ def make_message(subject, message, camera_id, moment, timespan, callback):
     camera_config = config.get_camera(camera_id)
     
     # we must start the IO loop for the media list subprocess polling
-    #io_loop = IOLoop.instance()
-    try:
-        io_loop = asyncio.get_running_loop()
-    except RuntimeError:
-        io_loop = asyncio.new_event_loop()
+    io_loop = IOLoop.instance()
 
     def on_media_files(media_files):
-        #io_loop.stop()
         io_loop.stop()
         
         timestamp = time.mktime(moment.timetuple())
