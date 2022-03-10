@@ -87,4 +87,4 @@ def _do_cleanup():
          
     except Exception as e:
         logging.error('failed to cleanup media files: %(msg)s' % {
-                'msg': unicode(e)}, exc_info=True)
+                'msg': str(e)}, exc_info=True)

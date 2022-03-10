@@ -36,7 +36,7 @@ def _get_wifi_settings():
     
     except Exception as e:
         logging.error('could open wifi settings file %(path)s: %(msg)s' % {
-                'path': WPA_SUPPLICANT_CONF, 'msg': unicode(e)})
+                'path': WPA_SUPPLICANT_CONF, 'msg': str(e)})
         
         return {
             'wifiEnabled': False,
@@ -109,7 +109,7 @@ def _set_wifi_settings(s):
     
     except Exception as e:
         logging.error('could open wifi settings file %(path)s: %(msg)s' % {
-                'path': WPA_SUPPLICANT_CONF, 'msg': unicode(e)})
+                'path': WPA_SUPPLICANT_CONF, 'msg': str(e)})
 
         return
     
@@ -196,7 +196,7 @@ def _set_wifi_settings(s):
     
     except Exception as e:
         logging.error('could open wifi settings file %(path)s: %(msg)s' % {
-                'path': WPA_SUPPLICANT_CONF, 'msg': unicode(e)})
+                'path': WPA_SUPPLICANT_CONF, 'msg': str(e)})
 
         return
     

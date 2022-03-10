@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import collections
-import datetime
 import errno
 import glob
 import hashlib
@@ -38,7 +37,7 @@ from motioneye import utils
 from motioneye import v4l2ctl
 
 _CAMERA_CONFIG_FILE_NAME = 'camera-%(id)s.conf'
-_MAIN_CONFIG_FILE_NAME = 'motion.conf'
+_MAIN_CONFIG_FILE_NAME = 'motioneye.conf'
 _ACTIONS = ['lock', 'unlock', 'light_on', 'light_off', 'alarm_on', 'alarm_off',
             'up', 'right', 'down', 'left', 'zoom_in', 'zoom_out',
             'preset1', 'preset2', 'preset3', 'preset4', 'preset5', 'preset6', 'preset7', 'preset8', 'preset9']
@@ -173,10 +172,6 @@ def additional_config(func):
     _additional_config_funcs.append(func)
 
 
-from motioneye import wifictl  # unused import
-from motioneye import tzctl  # unused import
-
-
 def get_main(as_lines=False):
     global _main_config_cache
 
@@ -200,7 +195,7 @@ def get_main(as_lines=False):
 
         else:
             logging.error('could not open main config file %(path)s: %(msg)s' % {
-                'path': config_file_path, 'msg': unicode(e)})
+                'path': config_file_path, 'msg': str(e)})
 
             raise
 
@@ -210,7 +205,7 @@ def get_main(as_lines=False):
 
         except Exception as e:
             logging.error('could not read main config file %(path)s: %(msg)s' % {
-                'path': config_file_path, 'msg': unicode(e)})
+                'path': config_file_path, 'msg': str(e)})
 
             raise
 
@@ -262,7 +257,7 @@ def set_main(main_config):
 
     except Exception as e:
         logging.error('could not open main config file %(path)s for writing: %(msg)s' % {
-            'path': config_file_path, 'msg': unicode(e)})
+            'path': config_file_path, 'msg': str(e)})
 
         raise
 
@@ -273,7 +268,7 @@ def set_main(main_config):
 
     except Exception as e:
         logging.error('could not write main config file %(path)s: %(msg)s' % {
-            'path': config_file_path, 'msg': unicode(e)})
+            'path': config_file_path, 'msg': str(e)})
 
         raise
 
@@ -296,7 +291,7 @@ def get_camera_ids(filter_valid=True):
 
     except Exception as e:
         logging.error('failed to list config dir %(path)s: %(msg)s', {
-            'path': config_path, 'msg': unicode(e)})
+            'path': config_path, 'msg': str(e)})
 
         raise
 
@@ -371,7 +366,7 @@ def get_camera(camera_id, as_lines=False):
         f = open(camera_config_path, 'r')
 
     except Exception as e:
-        logging.error('could not open camera config file: %(msg)s' % {'msg': unicode(e)})
+        logging.error('could not open camera config file: %(msg)s' % {'msg': str(e)})
 
         raise
 
@@ -380,7 +375,7 @@ def get_camera(camera_id, as_lines=False):
 
     except Exception as e:
         logging.error('could not read camera config file %(path)s: %(msg)s' % {
-            'path': camera_config_path, 'msg': unicode(e)})
+            'path': camera_config_path, 'msg': str(e)})
 
         raise
 
@@ -476,7 +471,7 @@ def set_camera(camera_id, camera_config):
 
     except Exception as e:
         logging.error('could not open camera config file %(path)s for writing: %(msg)s' % {
-            'path': camera_config_path, 'msg': unicode(e)})
+            'path': camera_config_path, 'msg': str(e)})
 
         raise
 
@@ -487,7 +482,7 @@ def set_camera(camera_id, camera_config):
 
     except Exception as e:
         logging.error('could not write camera config file %(path)s: %(msg)s' % {
-            'path': camera_config_path, 'msg': unicode(e)})
+            'path': camera_config_path, 'msg': str(e)})
 
         raise
 
@@ -611,7 +606,7 @@ def rem_camera(camera_id):
 
     except Exception as e:
         logging.error('could not remove camera config file %(path)s: %(msg)s' % {
-            'path': camera_config_path, 'msg': unicode(e)})
+            'path': camera_config_path, 'msg': str(e)})
 
         raise
 
