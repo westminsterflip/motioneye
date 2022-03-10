@@ -53,7 +53,7 @@ def _get_os_version_uname():
         lines = output.strip().split()
         name, version = lines
         
-        return name, version
+        return name.decode('ascii'), version.decode('ascii')
 
     except:
         return 'Linux', ''  # most likely :)

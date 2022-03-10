@@ -312,8 +312,6 @@ def start_motion():
     import config
     from motioneye import motionctl
 
-    print("starting motion")
-
     io_loop = IOLoop.instance()
 
     # add a motion running checker
