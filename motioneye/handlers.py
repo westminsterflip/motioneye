@@ -95,7 +95,7 @@ class BaseHandler(RequestHandler):
 
     def finish(self, chunk=None):
         import motioneye
-
+        print('finish1')
         self.set_header('Server', 'motionEye/%s' % motioneye.VERSION)
         RequestHandler.finish(self, chunk=chunk)
 
@@ -107,6 +107,7 @@ class BaseHandler(RequestHandler):
         context.setdefault('version', motioneye.VERSION)
 
         content = template.render(template_name, **context)
+        print('finish render')
         self.finish(content)
 
     def finish_json(self, data=None):
@@ -114,6 +115,7 @@ class BaseHandler(RequestHandler):
             data = {}
 
         self.set_header('Content-Type', 'application/json')
+        print('finish finish_json')
         self.finish(json.dumps(data))
 
     def get_current_user(self):
@@ -173,6 +175,7 @@ class BaseHandler(RequestHandler):
 
     def _handle_request_exception(self, exception):
         try:
+            print('finish handle_req')
             if isinstance(exception, HTTPError):
                 logging.error(str(exception))
                 self.set_status(exception.status_code)
@@ -197,7 +200,7 @@ class BaseHandler(RequestHandler):
                 if (user is None) or (user != 'admin' and (admin or _admin)):
                     self.set_header('Content-Type', 'application/json')
                     self.set_status(403)
-
+                    print('finish wrapper')
                     return self.finish_json({'error': 'unauthorized', 'prompt': prompt})
 
                 return func(self, *args, **kwargs)
@@ -213,6 +216,7 @@ class BaseHandler(RequestHandler):
         raise HTTPError(400, 'method not allowed')
 
     def head(self, *args, **kwargs):
+        print('finish head')
         self.finish()
 
 
@@ -330,7 +334,7 @@ class ConfigHandler(BaseHandler):
             local_config = config.get_camera(camera_id)
             if utils.is_local_motion_camera(local_config):
                 ui_config = config.motion_camera_dict_to_ui(local_config)
-
+                print('finish get_config')
                 self.finish_json(ui_config)
 
             elif utils.is_remote_camera(local_config):
@@ -498,7 +502,7 @@ class ConfigHandler(BaseHandler):
 
                 else:
                     motionctl.start()
-
+            print('finish finish')
             self.finish({'reload': reload, 'reboot': reboot[0], 'error': error[0]})
 
         if camera_id is not None:
