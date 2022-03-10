@@ -216,7 +216,7 @@ def get_main(as_lines=False):
         return lines
 
     main_config = _conf_to_dict(lines, list_names=['camera'], no_convert=[
-                                '@admin_username', '@admin_password', '@normal_username', '@normal_password'])
+        '@admin_username', '@admin_password', '@normal_username', '@normal_password'])
 
     # adapt directives from pre-4.2 configuration
     adapt_config_directives(main_config, _MOTION_PRE_TO_POST_42_OPTIONS_MAPPING)
@@ -413,7 +413,7 @@ def get_camera(camera_id, as_lines=False):
         _set_default_simple_mjpeg_camera(camera_id, camera_config)
 
     else:  # incomplete configuration
-        logging.warn('camera config file at %s is incomplete, ignoring' % camera_config_path)
+        logging.warning('camera config file at %s is incomplete, ignoring' % camera_config_path)
 
         return None
 
@@ -500,7 +500,7 @@ def add_camera(device_details):
             host += ':' + str(device_details['port'])
 
         device_details['url'] = urllib.parse.urlunparse(
-                (device_details['scheme'], host, device_details['path'], '', '', ''))
+            (device_details['scheme'], host, device_details['path'], '', '', ''))
 
     # determine the last camera id
     camera_ids = get_camera_ids()
@@ -825,14 +825,13 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
 
     data['threshold'] = threshold
 
-
     if ui['privacy_mask']:
         capture_width, capture_height = data.get('width'), data.get('height')
         if data.get('rotate') in [90, 270]:
             capture_width, capture_height = capture_height, capture_width
 
         data['mask_privacy'] = utils.build_editable_mask_file(prev_config['@id'], 'privacy', ui['privacy_mask_lines'],
-                                                            capture_width, capture_height)
+                                                              capture_width, capture_height)
 
     if (ui['storage_device'] == 'network-share') and settings.SMB_SHARES:
         mount_point = smbctl.make_mount_point(ui['network_server'], ui['network_share_name'], ui['network_username'])
@@ -957,13 +956,13 @@ def motion_camera_ui_to_dict(ui, prev_config=None):
     # working schedule
     if ui['working_schedule']:
         data['@working_schedule'] = (
-            ui['monday_from'] + '-' + ui['monday_to'] + '|' +
-            ui['tuesday_from'] + '-' + ui['tuesday_to'] + '|' +
-            ui['wednesday_from'] + '-' + ui['wednesday_to'] + '|' +
-            ui['thursday_from'] + '-' + ui['thursday_to'] + '|' +
-            ui['friday_from'] + '-' + ui['friday_to'] + '|' +
-            ui['saturday_from'] + '-' + ui['saturday_to'] + '|' +
-            ui['sunday_from'] + '-' + ui['sunday_to'])
+                ui['monday_from'] + '-' + ui['monday_to'] + '|' +
+                ui['tuesday_from'] + '-' + ui['tuesday_to'] + '|' +
+                ui['wednesday_from'] + '-' + ui['wednesday_to'] + '|' +
+                ui['thursday_from'] + '-' + ui['thursday_to'] + '|' +
+                ui['friday_from'] + '-' + ui['friday_to'] + '|' +
+                ui['saturday_from'] + '-' + ui['saturday_to'] + '|' +
+                ui['sunday_from'] + '-' + ui['sunday_to'])
 
         data['@working_schedule_type'] = ui['working_schedule_type']
 
@@ -1410,7 +1409,7 @@ def motion_camera_dict_to_ui(data):
     command_notifications = []
     for e in on_event_start:
         if e.count(' sendmail '):
-            e = shlex.split(utils.make_str(e)) # poor shlex can't deal with unicode properly
+            e = shlex.split(utils.make_str(e))  # poor shlex can't deal with unicode properly
 
             if len(e) < 10:
                 continue
@@ -1434,7 +1433,7 @@ def motion_camera_dict_to_ui(data):
                 ui['email_notifications_picture_time_span'] = 0
 
         elif e.count(' sendtelegram '):
-            e = shlex.split(utils.make_str(e)) # poor shlex can't deal with unicode properly
+            e = shlex.split(utils.make_str(e))  # poor shlex can't deal with unicode properly
 
             if len(e) < 7:
                 continue
@@ -1449,7 +1448,7 @@ def motion_camera_dict_to_ui(data):
                 ui['telegram_notifications_picture_time_span'] = 0
 
         elif e.count(' webhook '):
-            e = shlex.split(utils.make_str(e)) # poor shlex can't deal with unicode properly
+            e = shlex.split(utils.make_str(e))  # poor shlex can't deal with unicode properly
 
             if len(e) < 3:
                 continue
@@ -1493,7 +1492,7 @@ def motion_camera_dict_to_ui(data):
     command_storage = []
     for e in on_movie_end:
         if e.count(' webhook '):
-            e = shlex.split(utils.make_str(e)) # poor shlex can't deal with unicode properly
+            e = shlex.split(utils.make_str(e))  # poor shlex can't deal with unicode properly
 
             if len(e) < 3:
                 continue
@@ -1748,7 +1747,7 @@ def _conf_to_dict(lines, list_names=None, no_convert=None):
         if len(line) == 0:  # empty line
             continue
 
-        match = re.match('^#\s*(@\w+)\s*(.*)', line)
+        match = re.match(r'^#\s*(@\w+)\s*(.*)', line)
         if match:
             name, value = match.groups()[:2]
 
@@ -1792,7 +1791,7 @@ def _dict_to_conf(lines, data, list_names=None):
             conf_lines.append(line)
             continue
 
-        match = re.match('^#\s*(@\w+)\s*(.*)', line)
+        match = re.match(r'^#\s*(@\w+)\s*(.*)', line)
         if match:  # @line
             (name, value) = match.groups()[:2]
 

@@ -45,15 +45,15 @@ def shut_down():
     
     prog = _find_prog('shutdown')
     if prog:
-        return _exec_prog(prog + ' -h now')
+        return _exec_prog(prog + ' -h now'.encode())
     
     prog = _find_prog('systemctl')
     if prog:
-        return _exec_prog(prog + ' poweroff')
+        return _exec_prog(prog + ' poweroff'.encode())
     
     prog = _find_prog('init')
     if prog:
-        return _exec_prog(prog + ' 0')
+        return _exec_prog(prog + ' 0'.encode())
     
     return False
 
@@ -67,14 +67,14 @@ def reboot():
     
     prog = _find_prog('shutdown')
     if prog:
-        return _exec_prog(prog + ' -r now')
+        return _exec_prog(prog + ' -r now'.encode())
     
     prog = _find_prog('systemctl')
     if prog:
-        return _exec_prog(prog + ' reboot')
+        return _exec_prog(prog + ' reboot'.encode())
     
     prog = _find_prog('init')
     if prog:
-        return _exec_prog(prog + ' 6')
+        return _exec_prog(prog + ' 6'.encode())
     
     return False

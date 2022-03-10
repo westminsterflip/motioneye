@@ -43,8 +43,8 @@ def main(parser, args):
     logging.debug('method = %s' % options.method)
     logging.debug('url = %s' % options.url)
     
-    headers = {}    
-    parts = urllib.parse.urllib.parse(options.url)
+    headers = {}
+    parts = urllib.parse.urlparse(options.url)
     url = options.url
     data = None
 

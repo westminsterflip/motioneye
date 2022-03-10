@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 
-import datetime
 import logging
 import os
 import re
@@ -94,14 +93,14 @@ def list_mounts():
             server, share = match.groups()
             share = share.replace('\\040', ' ')  # spaces are reported oddly by /proc/mounts
             
-            match = re.search('username=([a-z][-\w]*)', opts)
+            match = re.search(r'username=([a-z][-\w]*)', opts)
             if match:
                 username = match.group(1)
             
             else:
                 username = ''
 
-            match = re.search('vers=([\w.]+)', opts)
+            match = re.search(r'vers=([\w.]+)', opts)
             if match:
                 smb_ver = match.group(1)
 
@@ -262,7 +261,7 @@ def _umount(server, share, username):
 
 def _is_motioneye_mount(mount_point):
     mount_point_root = os.path.join(settings.SMB_MOUNT_ROOT, 'motioneye_')
-    return bool(re.match('^' + mount_point_root + '\w+$', mount_point))
+    return bool(re.match('^' + mount_point_root + r'\w+$', mount_point))
 
 
 def _umount_all():

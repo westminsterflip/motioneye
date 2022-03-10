@@ -46,6 +46,9 @@ from motioneye import v4l2ctl
 
 
 class BaseHandler(RequestHandler):
+    def data_received(self, chunk):
+        pass
+
     def get_all_arguments(self):
         keys = self.request.arguments.keys()
         arguments = dict([(key, self.get_argument(key)) for key in keys])
@@ -214,6 +217,9 @@ class BaseHandler(RequestHandler):
 
 
 class NotFoundHandler(BaseHandler):
+    def data_received(self, chunk):
+        pass
+
     def get(self, *args, **kwargs):
         raise HTTPError(404, 'not found')
 
@@ -221,6 +227,9 @@ class NotFoundHandler(BaseHandler):
 
 
 class MainHandler(BaseHandler):
+    def data_received(self, chunk):
+        pass
+
     def get(self):
         # additional config
         main_sections = config.get_additional_structure(camera=False, separators=True)[0]
@@ -254,6 +263,9 @@ class MainHandler(BaseHandler):
 
 
 class ManifestHandler(BaseHandler):
+    def data_received(self, chunk):
+        pass
+
     def get(self):
         self.set_header('Content-Type', 'application/manifest+json')
         self.set_header('Cache-Control', 'max-age=2592000')  # 30 days
@@ -261,6 +273,9 @@ class ManifestHandler(BaseHandler):
 
 
 class ConfigHandler(BaseHandler):
+    def data_received(self, chunk):
+        pass
+
     @asynchronous
     def get(self, camera_id=None, op=None):
         config.invalidate_monitor_commands()
@@ -926,6 +941,9 @@ class ConfigHandler(BaseHandler):
 
 
 class PictureHandler(BaseHandler):
+    def data_received(self, chunk):
+        pass
+
     def compute_etag(self):
         return None
 
@@ -1002,8 +1020,8 @@ class PictureHandler(BaseHandler):
             # get_current_picture() will make sure to start a client, but a jpeg frame is not available right away;
             # wait at most 5 seconds and retry every 200 ms.
             if not picture and retry < 25:
-                # return IOLoop.instance().add_timeout(datetime.timedelta(seconds=0.2), self.current,camera_id=camera_id, retry=retry + 1)
-                return asyncio.get_running_loop().call_later(0.2, self.current, camera_id=camera_id, retry=retry + 1)
+                return IOLoop.instance().add_timeout(datetime.timedelta(seconds=0.2), self.current, camera_id=camera_id,
+                                                     retry=retry + 1)
 
             self.set_cookie('motion_detected_' + camera_id_str, str(motionctl.is_motion_detected(camera_id)).lower())
             self.set_cookie('capture_fps_' + camera_id_str, '%.1f' % mjpgclient.get_fps(camera_id))
@@ -1414,6 +1432,9 @@ class PictureHandler(BaseHandler):
 
 
 class MovieHandler(BaseHandler):
+    def data_received(self, chunk):
+        pass
+
     @asynchronous
     def get(self, camera_id, op, filename=None):
         if camera_id is not None:
@@ -1577,6 +1598,9 @@ class MovieHandler(BaseHandler):
 
 # support fetching movies with authentication
 class MoviePlaybackHandler(StaticFileHandler, BaseHandler):
+    def data_received(self, chunk):
+        pass
+
     import tempfile
     tmpdir = tempfile.gettempdir() + '/MotionEye'
     if not os.path.exists(tmpdir):
@@ -1653,8 +1677,11 @@ class MoviePlaybackHandler(StaticFileHandler, BaseHandler):
 
 
 class MovieDownloadHandler(MoviePlaybackHandler):
+    def data_received(self, chunk):
+        pass
+
     def set_extra_headers(self, filename):
-        if (self.get_status() in (200, 304)):
+        if self.get_status() in (200, 304):
             self.set_header('Content-Disposition', 'attachment; filename=' + self.pretty_filename + ';')
             self.set_header('Expires', '0')
 
@@ -1710,14 +1737,14 @@ class ActionHandler(BaseHandler):
         exit_status = self.p.poll()
         if exit_status is not None:
             output = self.p.stdout.read()
-            lines = output.split('\n')
+            lines = output.split(b'\n')
             if not lines[-1]:
                 lines = lines[:-1]
             command = os.path.basename(self.command)
             if exit_status:
-                logging.warn('%s: command has finished with non-zero exit status: %s' % (command, exit_status))
+                logging.warning('%s: command has finished with non-zero exit status: %s' % (command, exit_status))
                 for line in lines:
-                    logging.warn('%s: %s' % (command, line))
+                    logging.warning('%s: %s' % (command, line))
 
             else:
                 logging.debug('%s: command has finished' % command)
@@ -1773,7 +1800,7 @@ class RelayEventHandler(BaseHandler):
 
         camera_config = config.get_camera(camera_id)
         if not utils.is_local_motion_camera(camera_config):
-            logging.warn('ignoring event for non-local camera with id %s' % camera_id)
+            logging.warning('ignoring event for non-local camera with id %s' % camera_id)
             return self.finish_json()
 
         if event == 'start':
@@ -1805,7 +1832,7 @@ class RelayEventHandler(BaseHandler):
                 self.upload_media_file(filename, camera_id, camera_config)
 
         else:
-            logging.warn('unknown event %s' % event)
+            logging.warning('unknown event %s' % event)
 
         self.finish_json()
 

@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
 import errno
 import logging
 import re
@@ -35,7 +34,7 @@ class MjpgClient(IOStream):
     _FPS_LEN = 10
 
     clients = {}  # dictionary of clients indexed by camera id
-    _last_erroneous_close_time = 0  # helps detecting erroneous connections and restart motion
+    _last_erroneous_close_time = 0  # helps detect erroneous connections and restart motion
 
     def __init__(self, camera_id, port, username, password, auth_mode):
         self._camera_id = camera_id
@@ -153,7 +152,7 @@ class MjpgClient(IOStream):
         if self._check_error():
             return
 
-        self.read_until_regex('HTTP/1.\d \d+ ', self._on_http)
+        self.read_until_regex(r'HTTP/1.\d \d+ ', self._on_http)
 
     def _on_http(self, data):
         if data.endswith('401 '):
@@ -180,7 +179,7 @@ class MjpgClient(IOStream):
 
         data = data.strip()
 
-        m = re.match('Basic\s*realm="([a-zA-Z0-9\-\s]+)"', data)
+        m = re.match(r'Basic\s*realm="([a-zA-Z0-9\-\s]+)"', data)
         if m:
             logging.debug('mjpg client using basic authentication')
 
@@ -224,7 +223,7 @@ class MjpgClient(IOStream):
         if self._check_error():
             return
 
-        matches = re.findall('(\d+)', data)
+        matches = re.findall(r'(\d+)', data)
         if not matches:
             self._error('could not find content length in mjpg header line "%(header)s"' % {
                     'header': data})

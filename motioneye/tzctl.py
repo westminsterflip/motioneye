@@ -69,7 +69,7 @@ def _get_time_zone_md5():
 
         return None
     
-    lines = [l for l in output.split('\n') if l]
+    lines = [l for l in output.split(b'\n') if l]
     lines = [l.split(None, 1) for l in lines]
     time_zone_by_md5 = dict(lines)
 
@@ -105,7 +105,7 @@ def _set_time_zone(time_zone):
     try:
         os.remove(settings.LOCAL_TIME_FILE)
     
-    except:
+    except (IsADirectoryError, FileNotFoundError, NotImplementedError):
         pass  # nevermind
     
     try:

@@ -88,10 +88,10 @@ def _list_disks_dev_by_id():
         target = os.path.realpath(os.path.join('/dev/disk/by-id/', entry))
         
         bus, entry = parts
-        m = re.search('-part(\d+)$', entry)
+        m = re.search(r'-part(\d+)$', entry)
         if m:
             part_no = int(m.group(1))
-            entry = re.sub('-part\d+$', '', entry)
+            entry = re.sub(r'-part\d+$', '', entry)
         
         else:
             part_no = None
@@ -141,7 +141,7 @@ def _list_disks_dev_by_id():
             partition['partitions'] = [dict(partition)]
 
     # prepare flat list of disks
-    disks = disks_by_dev.values()
+    disks = list(disks_by_dev.values())
     disks.sort(key=lambda d: d['vendor'])
     
     for disk in disks:
@@ -163,18 +163,16 @@ def _list_disks_fdisk():
     disk = None
     
     def add_disk(d):
-        logging.debug('found disk at "%s" on bus "%s": "%s %s"' %
-                (d['target'], d['bus'], d['vendor'], d['model']))
+        logging.debug('found disk at "%s" on bus "%s": "%s %s"' % (d['target'], d['bus'], d['vendor'], d['model']))
 
         for part in d['partitions']:
-            logging.debug('found partition "%s" at "%s" on bus "%s": "%s %s"' %
-                    (part['part_no'], part['target'], part['bus'], part['vendor'], part['model']))
+            logging.debug('found partition "%s" at "%s" on bus "%s": "%s %s"' % (part['part_no'], part['target'], part['bus'], part['vendor'], part['model']))
 
         disks.append(d)
 
-    for line in output.split('\n'):
-        line = line.replace('*', '')
-        line = re.sub('\s+', ' ', line.strip())
+    for line in output.split(b'\n'):
+        line = line.replace(b'*', b'')
+        line = re.sub(r'\s+', ' ', line.strip().decode())
         if not line:
             continue
 
@@ -194,7 +192,7 @@ def _list_disks_fdisk():
             
         elif line.startswith('/dev/') and disk:
             parts = line.split()
-            part_no = re.findall('\d+$', parts[0])
+            part_no = re.findall(r'\d+$', parts[0])
             partition = {
                 'part_no': int(part_no[0]) if part_no else None,
                 'target': parts[0],

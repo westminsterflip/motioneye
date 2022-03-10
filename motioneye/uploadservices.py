@@ -21,14 +21,14 @@ import mimetypes
 import os
 import os.path
 from io import StringIO
+from io import BytesIO
 import time
-import urllib
+import urllib.parse
 import urllib.request
 import pycurl
 
 from motioneye import settings
 from motioneye import utils
-from motioneye import config
 import datetime
 
 _STATE_FILE_NAME = 'uploadservices.json'
@@ -167,7 +167,7 @@ class GoogleBase:
             'access_type': 'offline'
         }
 
-        return cls.AUTH_URL + '?' + urllib.urlencode(query)
+        return cls.AUTH_URL + '?' + urllib.parse.urlencode(query)
 
     def _test_access(self):
         try:
@@ -275,9 +275,9 @@ class GoogleBase:
             'scope': self.SCOPE,
             'grant_type': 'authorization_code'
         }
-        body = urllib.urlencode(body)
+        body = urllib.parse.urlencode(body)
 
-        request = urllib.request.Request(self.TOKEN_URL, data=body, headers=headers)
+        request = urllib.request.Request(self.TOKEN_URL, data=body.encode('ascii'), headers=headers)
 
         try:
             response = utils.urlopen(request)
@@ -304,9 +304,9 @@ class GoogleBase:
             'client_secret': self.CLIENT_NOT_SO_SECRET,
             'grant_type': 'refresh_token'
         }
-        body = urllib.urlencode(body)
+        body = urllib.parse.urlencode(body)
 
-        request = urllib.request.Request(self.TOKEN_URL, data=body, headers=headers)
+        request = urllib.request.Request(self.TOKEN_URL, data=body.encode(), headers=headers)
 
         try:
             response = utils.urlopen(request)
@@ -420,7 +420,7 @@ class GoogleDrive(UploadService, GoogleBase):
     def _get_folder_id_by_name(self, parent_id, child_name, create=True):
         if parent_id:
             query = self.CHILDREN_QUERY % {'parent_id': parent_id, 'child_name': child_name}
-            query = urllib.quote(query)
+            query = urllib.parse.quote(query)
 
         else:
             query = ''
@@ -477,8 +477,7 @@ class GoogleDrive(UploadService, GoogleBase):
         removed_count = 0
         folder_id = self._get_folder_id_by_name('root', cloud_dir, False)
         children = self._get_children(folder_id)
-        self.info('found %s/%s folder(s) in local/cloud' % \
-            (len(local_folders), len(children)))
+        self.info('found %s/%s folder(s) in local/cloud' % (len(local_folders), len(children)))
         self.debug('local %s' % local_folders)
         for child in children:
             id = child['id']
@@ -684,7 +683,7 @@ class Dropbox(UploadService):
             'client_id': cls.CLIENT_ID
         }
 
-        return cls.AUTH_URL + '?' + urllib.urlencode(query)
+        return cls.AUTH_URL + '?' + urllib.parse.urlencode(query)
 
     def test_access(self):
         body = {
@@ -815,9 +814,9 @@ class Dropbox(UploadService):
             'client_secret': self.CLIENT_NOT_SO_SECRET,
             'grant_type': 'authorization_code'
         }
-        body = urllib.urlencode(body)
+        body = urllib.parse.urlencode(body)
 
-        request = urllib.request.Request(self.TOKEN_URL, data=body, headers=headers)
+        request = urllib.request.Request(self.TOKEN_URL, data=body.encode(), headers=headers)
 
         try:
             response = utils.urlopen(request)
@@ -877,7 +876,7 @@ class FTP(UploadService):
         conn.cwd(path)
 
         self.debug('uploading %s of %s bytes' % (filename, len(data)))
-        conn.storbinary('STOR %s' % filename, StringIO.StringIO(data))
+        conn.storbinary('STOR %s' % filename, BytesIO(data))
 
         self.debug('upload done')
 
@@ -974,7 +973,7 @@ class SFTP(UploadService):
 
         conn = self._get_conn(test_file)
         conn.setopt(conn.POSTQUOTE, rm_operations)  # Executed after transfer.
-        conn.setopt(pycurl.READFUNCTION, StringIO.StringIO().read)
+        conn.setopt(pycurl.READFUNCTION, StringIO().read)
 
         try:
             self.curl_perform_filetransfer(conn)
@@ -987,7 +986,7 @@ class SFTP(UploadService):
 
     def upload_data(self, filename, mime_type, data, ctime, camera_name):
         conn = self._get_conn(filename)
-        conn.setopt(pycurl.READFUNCTION, StringIO.StringIO(data).read)
+        conn.setopt(pycurl.READFUNCTION, StringIO(data).read)
 
         self.curl_perform_filetransfer(conn)
 
@@ -1176,6 +1175,7 @@ def _save(services):
     finally:
         f.close()
 
+
 def clean_cloud(local_dir, data, info):
     camera_id = info['camera_id']
     service_name = info['service_name']
@@ -1190,6 +1190,7 @@ def clean_cloud(local_dir, data, info):
         service.load(data)
         service.clean_cloud(cloud_dir, local_folders)
 
+
 def exist_in_local(folder, local_folders):
     if not local_folders:
         local_folders = []
@@ -1198,6 +1199,7 @@ def exist_in_local(folder, local_folders):
         return False
 
     return folder in local_folders
+
 
 def get_local_folders(dir):
     folders = next(os.walk(dir))[1]

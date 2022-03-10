@@ -1,4 +1,3 @@
-
 # Copyright (c) 2013 Calin Crisan
 # This file is part of motionEye.
 #
@@ -222,7 +221,7 @@ def get_motion_detection(camera_id, callback):
         return callback(error=error)
 
     url = 'http://127.0.0.1:%(port)s/%(id)s/detection/status' % {
-            'port': settings.MOTION_CONTROL_PORT, 'id': motion_camera_id}
+        'port': settings.MOTION_CONTROL_PORT, 'id': motion_camera_id}
 
     def on_response(response):
         if response.error:
@@ -231,8 +230,8 @@ def get_motion_detection(camera_id, callback):
         enabled = bool(response.body.lower().count('active'))
 
         logging.debug('motion detection is %(what)s for camera with id %(id)s' % {
-                'what': ['disabled', 'enabled'][enabled],
-                'id': camera_id})
+            'what': ['disabled', 'enabled'][enabled],
+            'id': camera_id})
 
         callback(enabled)
 
@@ -252,25 +251,25 @@ def set_motion_detection(camera_id, enabled):
         _motion_detected[camera_id] = False
 
     logging.debug('%(what)s motion detection for camera with id %(id)s' % {
-            'what': ['disabling', 'enabling'][enabled],
-            'id': camera_id})
+        'what': ['disabling', 'enabling'][enabled],
+        'id': camera_id})
 
     url = 'http://127.0.0.1:%(port)s/%(id)s/detection/%(enabled)s' % {
-            'port': settings.MOTION_CONTROL_PORT,
-            'id': motion_camera_id,
-            'enabled': ['pause', 'start'][enabled]}
+        'port': settings.MOTION_CONTROL_PORT,
+        'id': motion_camera_id,
+        'enabled': ['pause', 'start'][enabled]}
 
     def on_response(response):
         if response.error:
             logging.error('failed to %(what)s motion detection for camera with id %(id)s: %(msg)s' % {
-                    'what': ['disable', 'enable'][enabled],
-                    'id': camera_id,
-                    'msg': utils.pretty_http_error(response)})
+                'what': ['disable', 'enable'][enabled],
+                'id': camera_id,
+                'msg': utils.pretty_http_error(response)})
 
         else:
             logging.debug('successfully %(what)s motion detection for camera with id %(id)s' % {
-                    'what': ['disabled', 'enabled'][enabled],
-                    'id': camera_id})
+                'what': ['disabled', 'enabled'][enabled],
+                'id': camera_id})
 
     request = HTTPRequest(url, connect_timeout=_MOTION_CONTROL_TIMEOUT, request_timeout=_MOTION_CONTROL_TIMEOUT)
     http_client = AsyncHTTPClient()
@@ -287,14 +286,14 @@ def take_snapshot(camera_id):
     logging.debug('taking snapshot for camera with id %(id)s' % {'id': camera_id})
 
     url = 'http://127.0.0.1:%(port)s/%(id)s/action/snapshot' % {
-            'port': settings.MOTION_CONTROL_PORT,
-            'id': motion_camera_id}
+        'port': settings.MOTION_CONTROL_PORT,
+        'id': motion_camera_id}
 
     def on_response(response):
         if response.error:
             logging.error('failed to take snapshot for camera with id %(id)s: %(msg)s' % {
-                    'id': camera_id,
-                    'msg': utils.pretty_http_error(response)})
+                'id': camera_id,
+                'msg': utils.pretty_http_error(response)})
 
         else:
             logging.debug('successfully took snapshot for camera with id %(id)s' % {'id': camera_id})
@@ -377,6 +376,7 @@ def has_h264_v4l2m2m_support():
 
     return 'h264_v4l2m2m' in codecs.get('h264', {}).get('encoders', set())
 
+
 def has_h264_nvenc_support():
     binary, version, codecs = mediafiles.find_ffmpeg()
     if not binary:
@@ -385,6 +385,7 @@ def has_h264_nvenc_support():
     # TODO also check for motion codec parameter support
 
     return 'h264_nvenc' in codecs.get('h264', {}).get('encoders', set())
+
 
 def has_h264_nvmpi_support():
     binary, version, codecs = mediafiles.find_ffmpeg()
@@ -395,6 +396,7 @@ def has_h264_nvmpi_support():
 
     return 'h264_nvmpi' in codecs.get('h264', {}).get('encoders', set())
 
+
 def has_hevc_nvmpi_support():
     binary, version, codecs = mediafiles.find_ffmpeg()
     if not binary:
@@ -403,6 +405,7 @@ def has_hevc_nvmpi_support():
     # TODO also check for motion codec parameter support
 
     return 'hevc_nvmpi' in codecs.get('hevc', {}).get('encoders', set())
+
 
 def has_hevc_nvenc_support():
     binary, version, codecs = mediafiles.find_ffmpeg()
@@ -413,6 +416,7 @@ def has_hevc_nvenc_support():
 
     return 'hevc_nvenc' in codecs.get('hevc', {}).get('encoders', set())
 
+
 def has_h264_qsv_support():
     binary, version, codecs = mediafiles.find_ffmpeg()
     if not binary:
@@ -422,6 +426,7 @@ def has_h264_qsv_support():
 
     return 'h264_qsv' in codecs.get('h264', {}).get('encoders', set())
 
+
 def has_hevc_qsv_support():
     binary, version, codecs = mediafiles.find_ffmpeg()
     if not binary:
@@ -430,6 +435,7 @@ def has_hevc_qsv_support():
     # TODO also check for motion codec parameter support
 
     return 'hevc_qsv' in codecs.get('hevc', {}).get('encoders', set())
+
 
 def resolution_is_valid(width, height):
     # width & height must be be modulo 8

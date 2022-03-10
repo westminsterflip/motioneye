@@ -1,4 +1,3 @@
-
 # Copyright (c) 2013 Calin Crisan
 # This file is part of motionEye.
 #
@@ -51,17 +50,17 @@ def send_mail(server, port, account, password, tls, _from, to, subject, message,
     conn = smtplib.SMTP(server, port, timeout=settings.SMTP_TIMEOUT)
     if tls:
         conn.starttls()
-    
+
     if account and password:
         conn.login(account, password)
-    
+
     email = multipart.MIMEMultipart()
     email['Subject'] = subject
     email['From'] = _from
     email['To'] = ', '.join(to)
     email['Date'] = formatdate(localtime=True)
     email.attach(MIMEText(message))
-    
+
     for name in reversed(files):
         part = base.MIMEBase('image', 'jpeg')
         with open(name, 'rb') as f:
@@ -70,7 +69,7 @@ def send_mail(server, port, account, password, tls, _from, to, subject, message,
         encoders.encode_base64(part)
         part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(name))
         email.attach(part)
-    
+
     if files:
         logging.debug('attached %d pictures' % len(files))
 
@@ -81,13 +80,13 @@ def send_mail(server, port, account, password, tls, _from, to, subject, message,
 
 def make_message(subject, message, camera_id, moment, timespan, callback):
     camera_config = config.get_camera(camera_id)
-    
+
     # we must start the IO loop for the media list subprocess polling
     io_loop = IOLoop.instance()
 
     def on_media_files(media_files):
         io_loop.stop()
-        
+
         timestamp = time.mktime(moment.timetuple())
 
         if media_files:
@@ -105,7 +104,7 @@ def make_message(subject, message, camera_id, moment, timespan, callback):
             'hostname': socket.gethostname(),
             'moment': moment.strftime('%Y-%m-%d %H:%M:%S'),
         }
-        
+
         if settings.LOCAL_TIME_FILE:
             format_dict['timezone'] = tzctl.get_time_zone()
 
@@ -113,11 +112,11 @@ def make_message(subject, message, camera_id, moment, timespan, callback):
             format_dict['timezone'] = 'local time'
 
         logging.debug('creating email message')
-    
+
         m = message % format_dict
         s = subject % format_dict
         s = s.replace('\n', ' ')
-    
+
         m += '\n\n'
         m += 'motionEye.'
 
@@ -125,7 +124,7 @@ def make_message(subject, message, camera_id, moment, timespan, callback):
 
     if not timespan:
         return on_media_files([])
-    
+
     logging.debug('waiting for pictures to be taken')
     time.sleep(timespan)  # give motion some time to create motion pictures
 
@@ -134,9 +133,8 @@ def make_message(subject, message, camera_id, moment, timespan, callback):
     snapshot_filename = camera_config.get('snapshot_filename')
 
     if ((picture_filename or snapshot_filename) and
-        not picture_filename or picture_filename.startswith('%Y-%m-%d/') and
-        not snapshot_filename or snapshot_filename .startswith('%Y-%m-%d/')):
-
+            not picture_filename or picture_filename.startswith('%Y-%m-%d/') and
+            not snapshot_filename or snapshot_filename.startswith('%Y-%m-%d/')):
         prefix = moment.strftime('%Y-%m-%d')
         logging.debug('narrowing down still images path lookup to %s' % prefix)
 
@@ -188,7 +186,7 @@ def main(parser, args):
     options.timespan = int(options.timespan)
     message = messages.get(options.msg_id)
     subject = subjects.get(options.msg_id)
-    options.moment = datetime.datetime.strptime(options.moment, '%Y-%m-%dT%H:%M:%S')
+    options.moment = datetime.datetime.strptime(options.moment.isoformat(), '%Y-%m-%dT%H:%M:%S')
     options.password = options.password.replace('\\;', ';')  # unescape password
 
     # do not wait too long for media list,

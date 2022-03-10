@@ -63,7 +63,7 @@ setup(
 
     packages=['motioneye'],
 
-    install_requires=['tornado>=5<6', 'jinja2', 'pillow', 'pycurl'],
+    install_requires=['tornado>=5<6', 'jinja2', 'pillow', 'pycurl', 'pytz'],
 
     package_data={
         'motioneye': [

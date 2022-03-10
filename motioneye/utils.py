@@ -1,4 +1,3 @@
-
 # Copyright (c) 2013 Calin Crisan
 # This file is part of motionEye.
 #
@@ -37,14 +36,12 @@ from tornado.ioloop import IOLoop
 
 from motioneye import settings
 
-
-_SIGNATURE_REGEX = re.compile('[^a-zA-Z0-9/?_.=&{}\[\]":, -]')
+_SIGNATURE_REGEX = re.compile(r'[^a-zA-Z0-9/?_.=&{}\[\]":, -]')
 _SPECIAL_COOKIE_NAMES = {'expires', 'domain', 'path', 'secure', 'httponly'}
 
 MASK_WIDTH = 32
 
 DEV_NULL = open('/dev/null', 'w')
-
 
 COMMON_RESOLUTIONS = [
     (320, 200),
@@ -270,21 +267,6 @@ def make_str(s):
         return s
 
     try:
-        return str(s)
-
-    except:
-        try:
-            return str(s, encoding='utf8').encode('utf8')
-
-        except:
-            return str(s).encode('utf8')
-
-
-def make_str(s):
-    if isinstance(s, unicode):
-        return s
-
-    try:
         return str(s, encoding='utf8')
 
     except:
@@ -292,7 +274,7 @@ def make_str(s):
             return str(s)
 
         except:
-            return str(s).decode('utf8')
+            return s.decode('utf8')
 
 
 def split_semicolon(s):
@@ -313,7 +295,7 @@ def split_semicolon(s):
 
 def get_disk_usage(path):
     logging.debug('getting disk usage for path %(path)s...' % {
-            'path': path})
+        'path': path})
 
     try:
         result = os.statvfs(path)
@@ -350,7 +332,7 @@ def is_v4l2_camera(config):
 
 
 def is_mmal_camera(config):
-    '''Tells if a camera is mmal device managed by the local motion instance.'''
+    """Tells if a camera is mmal device managed by the local motion instance."""
     return bool(config.get('mmalcam_name'))
 
 
@@ -374,10 +356,10 @@ def test_mjpeg_url(data, auth_modes, allow_jpeg, callback):
     data.setdefault('password', None)
 
     url = '%(scheme)s://%(host)s%(port)s%(path)s' % {
-            'scheme': data['scheme'] if data['scheme'] != 'mjpeg' else 'http',
-            'host': data['host'],
-            'port': ':' + str(data['port']) if data['port'] else '',
-            'path': data['path'] or ''}
+        'scheme': data['scheme'] if data['scheme'] != 'mjpeg' else 'http',
+        'host': data['host'],
+        'port': ':' + str(data['port']) if data['port'] else '',
+        'path': data['path'] or ''}
 
     called = [False]
     status_2xx = [False]
@@ -417,7 +399,7 @@ def test_mjpeg_url(data, auth_modes, allow_jpeg, callback):
 
         else:
             # check for the status header
-            m = re.match('^http/1.(\d) (\d+) ', header)
+            m = re.match(r'^http/1.(\d) (\d+) ', header)
             if m:
                 if int(m.group(2)) / 100 == 2:
                     status_2xx[0] = True
@@ -442,8 +424,6 @@ def test_mjpeg_url(data, auth_modes, allow_jpeg, callback):
 
 
 def test_rtsp_url(data, callback):
-    from motioneye import motionctl
-
     scheme = data.get('scheme', 'rtsp')
     host = data.get('host', '127.0.0.1')
     port = data.get('port') or '554'
@@ -452,10 +432,10 @@ def test_rtsp_url(data, callback):
     password = data.get('password')
 
     url = '%(scheme)s://%(host)s%(port)s%(path)s' % {
-            'scheme': scheme,
-            'host': host,
-            'port': (':' + port) if port else '',
-            'path': path}
+        'scheme': scheme,
+        'host': host,
+        'port': (':' + port) if port else '',
+        'path': path}
 
     called = [False]
     send_auth = [False]
@@ -477,7 +457,8 @@ def test_rtsp_url(data, callback):
         stream.set_close_callback(on_close)
         stream.connect((host, int(port)), on_connect)
 
-        timeout[0] = io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT), functools.partial(on_connect, _timeout=True))
+        timeout[0] = io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT),
+                                         functools.partial(on_connect, _timeout=True))
 
         return stream
 
@@ -515,7 +496,7 @@ def test_rtsp_url(data, callback):
         if check_error():
             return
 
-        stream.read_until_regex('RTSP/1.0 \d+ ', on_rtsp)
+        stream.read_until_regex(r'RTSP/1.0 \d+ ', on_rtsp)
         timeout[0] = io_loop.add_timeout(datetime.timedelta(seconds=settings.MJPG_CLIENT_TIMEOUT), on_rtsp)
 
     def on_rtsp(data=None):
@@ -570,7 +551,7 @@ def test_rtsp_url(data, callback):
         io_loop.remove_timeout(timeout[0])
 
         if data:
-            scheme = re.findall('WWW-Authenticate: ([^\s]+)', data)[0].strip()
+            scheme = re.findall(r'WWW-Authenticate: ([^\s]+)', data)[0].strip()
             logging.debug('rtsp netcam auth scheme: %s' % scheme)
             if scheme.lower() == 'basic':
                 send_auth[0] = True
@@ -639,28 +620,26 @@ def test_rtsp_url(data, callback):
 
     stream = connect()
 
+
 def test_rtmp_url(data, callback):
-    from motioneye import motionctl
+    # scheme = data.get('scheme', 'rtmp')
+    # host = data.get('host', '127.0.0.1')
+    # port = data.get('port') or '1935'
+    # path = data.get('path') or ''
+    # username = data.get('username')
+    # password = data.get('password')
 
-    scheme = data.get('scheme', 'rtmp')
-    host = data.get('host', '127.0.0.1')
-    port = data.get('port') or '1935'
-    path = data.get('path') or ''
-    username = data.get('username')
-    password = data.get('password')
-
-    url = '%(scheme)s://%(host)s%(port)s%(path)s' % {
-            'scheme': scheme,
-            'host': host,
-            'port': (':' + port) if port else '',
-            'path': path}
+    # url = '%(scheme)s://%(host)s%(port)s%(path)s' % {
+    #     'scheme': scheme,
+    #     'host': host,
+    #     'port': (':' + port) if port else '',
+    #     'path': path}
 
     # Since RTMP is a binary TCP stream its a little more work to do a proper test
     # For now lets just check if a TCP socket is open on the target IP:PORT
     # TODO: Actually do the TCP SYN/ACK check...
 
-    cameras = []
-    cameras.append({'id': 'tcp', 'name': 'RTMP/TCP Camera'})
+    cameras = [{'id': 'tcp', 'name': 'RTMP/TCP Camera'}]
     callback(cameras)
 
 
@@ -669,7 +648,7 @@ def compute_signature(method, path, body, key):
     query = [q for q in urllib.parse.parse_qsl(parts[3], keep_blank_values=True) if (q[0] != '_signature')]
     query.sort(key=lambda q: q[0])
     # "safe" characters here are set to match the encodeURIComponent JavaScript counterpart
-    query = [(n, urllib.quote(v, safe="!'()*~")) for (n, v) in query]
+    query = [(n, urllib.parse.quote(v, safe="!'()*~")) for (n, v) in query]
     query = '&'.join([(q[0] + '=' + q[1]) for q in query])
     parts[0] = parts[1] = ''
     parts[3] = query
@@ -704,7 +683,7 @@ def parse_cookies(cookies_headers):
 
 
 def build_basic_header(username, password):
-    return 'Basic ' + base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+    return 'Basic ' + str('%s:%s'.encode() % (username, password)).replace('\n', '')
 
 
 def parse_basic_header(header):
@@ -753,6 +732,7 @@ def build_digest_header(method, url, username, password, state):
             if isinstance(x, str):
                 x = x.encode('utf-8')
             return hashlib.md5(x).hexdigest()
+
         hash_utf8 = md5_utf8
 
     else:  # _algorithm == 'SHA'
@@ -760,6 +740,7 @@ def build_digest_header(method, url, username, password, state):
             if isinstance(x, str):
                 x = x.encode('utf-8')
             return hashlib.sha1(x).hexdigest()
+
         hash_utf8 = sha_utf8
 
     KD = lambda s, d: hash_utf8("%s:%s" % (s, d))
@@ -847,7 +828,7 @@ def build_editable_mask_file(camera_id, mask_class, mask_lines, capture_width=No
     width = mask_lines[0]
     height = mask_lines[1]
     mask_lines = mask_lines[2:]
-    
+
     logging.debug('building editable %s mask for camera with id %s (%sx%s)' %
                   (mask_class, camera_id, width, height))
 
@@ -908,7 +889,7 @@ def build_editable_mask_file(camera_id, mask_class, mask_lines, capture_width=No
             dr.rectangle((nx * rw, ny * rh, nx * rw + rx - 1, ny * rh + ry - 1), fill=0)
 
     file_name = build_mask_file_name(camera_id, mask_class)
-    
+
     # resize the image if necessary
     if capture_width and capture_height and im.size != (capture_width, capture_height):
         logging.debug('editable mask needs resizing from %sx%s to %sx%s' %
@@ -920,11 +901,13 @@ def build_editable_mask_file(camera_id, mask_class, mask_lines, capture_width=No
 
     return file_name
 
+
 def build_mask_file_name(camera_id, mask_class):
-    file_name = 'mask_%s.pgm' % (camera_id) if mask_class == 'motion' else 'mask_%s_%s.pgm' % (camera_id, mask_class)
+    file_name = 'mask_%s.pgm' % camera_id if mask_class == 'motion' else 'mask_%s_%s.pgm' % (camera_id, mask_class)
     full_path = os.path.join(settings.CONF_PATH, file_name)
 
     return full_path
+
 
 def parse_editable_mask_file(camera_id, mask_class, capture_width=None, capture_height=None):
     # capture_width and capture_height arguments represent the current size

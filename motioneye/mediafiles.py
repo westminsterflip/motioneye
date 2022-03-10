@@ -28,6 +28,7 @@ import re
 import signal
 import stat
 from io import StringIO
+from io import BytesIO
 import subprocess
 import time
 import zipfile
@@ -183,7 +184,7 @@ def _remove_older_files(directory, moment, clean_cloud_info, exts):
                     try:
                         os.remove(os.path.join(dir_path, p))
 
-                    except:
+                    except (IsADirectoryError, FileNotFoundError, NotImplementedError) as e:
                         logging.error('failed to remove %s: %s' % (p, e))
 
             if not listing or len(listing) == len(thumbs):
@@ -194,7 +195,7 @@ def _remove_older_files(directory, moment, clean_cloud_info, exts):
                     os.removedirs(dir_path)
                     removed_folder_count += 1
 
-                except:
+                except (IsADirectoryError, FileNotFoundError, NotImplementedError) as e:
                     logging.error('failed to remove %s: %s' % (dir_path, e))
 
     if clean_cloud_info and removed_folder_count > 0:
@@ -237,7 +238,7 @@ def find_ffmpeg():
 
     codecs = {}
     for line in lines:
-        m = re.match('^ [DEVILSA.]{6} ([\w+_]+)', line)
+        m = re.match(r'^ [DEVILSA.]{6} ([\w+_]+)', line)
         if not m:
             continue
 
@@ -246,11 +247,11 @@ def find_ffmpeg():
         decoders = set()
         encoders = set()
 
-        m = re.search('decoders: ([\w\s_]+)+', line)
+        m = re.search(r'decoders: ([\w\s_]+)+', line)
         if m:
             decoders = set(m.group(1).split())
 
-        m = re.search('encoders: ([\w\s_]+)+', line)
+        m = re.search(r'encoders: ([\w\s_]+)+', line)
         if m:
             encoders = set(m.group(1).split())
 
@@ -302,7 +303,7 @@ def cleanup_media(media_type):
         service_name = camera_config.get('@upload_service')
         clean_cloud_info = None
         if cloud_enabled and clean_cloud_enabled and camera_id and service_name and cloud_dir:
-            clean_cloud_info = { 'camera_id': camera_id, 'service_name': service_name, 'cloud_dir': cloud_dir }
+            clean_cloud_info = {'camera_id': camera_id, 'service_name': service_name, 'cloud_dir': cloud_dir}
         if os.path.exists(target_dir):
             # create a sentinel file to make sure the target dir is never removed
             open(os.path.join(target_dir, '.keep'), 'w').close()
@@ -371,7 +372,7 @@ def make_movie_preview(camera_config, full_path):
         try:
             os.remove(thumb_path)
 
-        except:
+        except (IsADirectoryError, FileNotFoundError, NotImplementedError):
             pass
 
         return None
@@ -443,11 +444,11 @@ def list_media(camera_config, media_type, callback, prefix=None):
 
             else:  # process did not finish in time
                 logging.error('timeout waiting for the media listing process to finish')
-                try:
-                    os.kill(process.pid, signal.SIGTERM)
+                # try: no error mentioned in docs?
+                os.kill(process.pid, signal.SIGTERM)
 
-                except:
-                    pass  # nevermind
+                # except:
+                # pass  # nevermind
 
                 callback(None)
 
@@ -563,11 +564,11 @@ def get_zipped_content(camera_config, media_type, group, callback):
 
             else:  # process did not finish in time
                 logging.error('timeout waiting for the zip process to finish')
-                try:
-                    os.kill(process.pid, signal.SIGTERM)
+                # try:
+                os.kill(process.pid, signal.SIGTERM)
 
-                except:
-                    pass  # nevermind
+                # except:
+                #     pass  # nevermind
 
                 callback(None)
 
@@ -736,7 +737,7 @@ def make_timelapse_movie(camera_config, framerate, interval, group):
                 else:
                     raise
 
-            frame_index = re.findall('frame=\s*(\d+)', output)
+            frame_index = re.findall(r'frame=\s*(\d+)', output)
             try:
                 frame_index = int(frame_index[-1])
 
@@ -777,7 +778,7 @@ def make_timelapse_movie(camera_config, framerate, interval, group):
                     try:
                         os.remove(tmp_filename)
 
-                    except:
+                    except (IsADirectoryError, FileNotFoundError, NotImplementedError) as e:
                         pass
 
     poll_media_list_process()
@@ -825,7 +826,7 @@ def get_media_preview(camera_config, path, media_type, width, height):
     if width is height is None:
         return content
 
-    sio = StringIO.StringIO(content)
+    sio = BytesIO(content)
     try:
         image = Image.open(sio)
 
@@ -838,7 +839,7 @@ def get_media_preview(camera_config, path, media_type, width, height):
 
     image.thumbnail((width, height), Image.LINEAR)
 
-    sio = StringIO.StringIO()
+    sio = StringIO()
     image.save(sio, format='JPEG')
 
     return sio.getvalue()
@@ -866,7 +867,7 @@ def del_media_content(camera_config, path, media_type):
         # remove the parent directories if empty or contains only thumb files
         dir_path = os.path.dirname(full_path)
         listing = os.listdir(dir_path)
-        thumbs = [l for l in listing if l.endswith('.thumb')]
+        thumbs = [l for l in listing if l.endswith('.thumb'.encode())]
 
         if len(listing) == len(thumbs):  # only thumbs
             for p in thumbs:
@@ -909,7 +910,7 @@ def del_media_group(camera_config, group, media_type):
 
     # remove the group directory if empty or contains only thumb files
     listing = os.listdir(full_path)
-    thumbs = [l for l in listing if l.endswith('.thumb')]
+    thumbs = [l for l in listing if l.endswith('.thumb'.encode())]
 
     if len(listing) == len(thumbs):  # only thumbs
         for p in thumbs:
@@ -931,7 +932,7 @@ def get_current_picture(camera_config, width, height):
     if width is height is None:
         return jpg  # no server-side resize needed
 
-    sio = StringIO.StringIO(jpg)
+    sio = BytesIO(jpg)
     image = Image.open(sio)
 
     if width and width < 1:  # given as percent
@@ -954,7 +955,7 @@ def get_current_picture(camera_config, width, height):
 
     image.thumbnail((width, height), Image.CUBIC)
 
-    sio = StringIO.StringIO()
+    sio = StringIO()
     image.save(sio, format='JPEG')
 
     return sio.getvalue()
@@ -968,13 +969,13 @@ def set_prepared_cache(data):
     key = hashlib.sha1(str(time.time())).hexdigest()
 
     if key in _prepared_files:
-        logging.warn('key "%s" already present in prepared cache' % key)
+        logging.warning('key "%s" already present in prepared cache' % key)
 
     _prepared_files[key] = data
 
     def clear():
         if _prepared_files.pop(key, None) is not None:
-            logging.warn('key "%s" was still present in the prepared cache, removed' % key)
+            logging.warning('key "%s" was still present in the prepared cache, removed' % key)
 
     timeout = 3600  # the user has 1 hour to download the file after creation
 
