@@ -232,7 +232,7 @@ class MainHandler(BaseHandler):
         self.render('main.html',
                     frame=False,
                     motion_version=motion_info[1] if motion_info else '(none)',
-                    os_version=str(' ').join(os_version),
+                    os_version=' '.join(os_version.decode('ascii')),
                     enable_update=settings.ENABLE_UPDATE,
                     enable_reboot=settings.ENABLE_REBOOT,
                     add_remove_cameras=settings.ADD_REMOVE_CAMERAS,
