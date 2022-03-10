@@ -129,7 +129,7 @@ def pretty_time(time):
     if isinstance(time, datetime.timedelta):
         hour = time.seconds / 3600
         minute = (time.seconds % 3600) / 60
-        time = datetime.time(hour, minute)
+        time = datetime.time(int(hour), int(minute))
 
     return '{hm}'.format(
         hm=time.strftime('%H:%M')
@@ -656,7 +656,12 @@ def compute_signature(method, path, body, key):
     path = _SIGNATURE_REGEX.sub('-', path)
     key = _SIGNATURE_REGEX.sub('-', key)
 
-    if body and body.startswith('---'):
+    try:
+        body = body.encode()
+    except AttributeError:
+        pass  # if it's already a bytes object it's fine
+
+    if body and body.startswith('---'.encode()):
         body = None  # file attachment
 
     body = body and _SIGNATURE_REGEX.sub('-', body.decode('utf8'))
