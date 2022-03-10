@@ -24,7 +24,7 @@ import socket
 import subprocess
 
 from tornado.ioloop import IOLoop
-from tornado.web import RequestHandler, StaticFileHandler, HTTPError, asynchronous
+from tornado.web import RequestHandler, StaticFileHandler, HTTPError
 
 from motioneye import config
 from motioneye import mediafiles
@@ -276,8 +276,7 @@ class ConfigHandler(BaseHandler):
     def data_received(self, chunk):
         pass
 
-    @asynchronous
-    def get(self, camera_id=None, op=None):
+    async def get(self, camera_id=None, op=None):
         config.invalidate_monitor_commands()
 
         if camera_id is not None:
@@ -298,8 +297,7 @@ class ConfigHandler(BaseHandler):
         else:
             raise HTTPError(400, 'unknown operation')
 
-    @asynchronous
-    def post(self, camera_id=None, op=None):
+    async def post(self, camera_id=None, op=None):
         if camera_id is not None:
             camera_id = int(camera_id)
 
@@ -509,7 +507,7 @@ class ConfigHandler(BaseHandler):
                     logging.debug('setting multiple configs')
 
                 elif len(ui_config) == 0:
-                    logging.warn('no configuration to set')
+                    logging.warning('no configuration to set')
 
                     self.finish()
 
@@ -525,17 +523,18 @@ class ConfigHandler(BaseHandler):
 
                 # make sure main config is handled first
                 items = ui_config.items()
-                items.sort(key=lambda key_cfg: key_cfg[0] != 'main')
+                # items.sort(key=lambda key_cfg: key_cfg[0] != 'main')
+                # dict sorting doens't exist in p3, but it wasn't doing much to begin with
+
+                cfg = items.get("main")
+                result = set_main_config(cfg)
+                reload = result['reload'] or reload
+                reboot[0] = result['reboot'] or reboot[0]
+                restart[0] = result['restart'] or restart[0]
+                check_finished(None, False)
 
                 for key, cfg in items:
-                    if key == 'main':
-                        result = set_main_config(cfg)
-                        reload = result['reload'] or reload
-                        reboot[0] = result['reboot'] or reboot[0]
-                        restart[0] = result['restart'] or restart[0]
-                        check_finished(None, False)
-
-                    else:
+                    if key != 'main':
                         set_camera_config(int(key), cfg, check_finished)
 
             else:  # single camera config
@@ -790,7 +789,7 @@ class ConfigHandler(BaseHandler):
         cls._upload_service_test_info = None
 
         if not upload_service_test_info:
-            return logging.warn('no pending upload service test request')
+            return logging.warning('no pending upload service test request')
 
         (request_handler, service_name) = upload_service_test_info
 
@@ -799,7 +798,7 @@ class ConfigHandler(BaseHandler):
             request_handler.finish_json()
 
         else:
-            logging.warn('accessing %s failed: %s' % (service_name, result))
+            logging.warning('accessing %s failed: %s' % (service_name, result))
             request_handler.finish_json({'error': result})
 
     @BaseHandler.auth(admin=True)
@@ -947,8 +946,7 @@ class PictureHandler(BaseHandler):
     def compute_etag(self):
         return None
 
-    @asynchronous
-    def get(self, camera_id, op, filename=None, group=None):
+    async def get(self, camera_id, op, filename=None, group=None):
         if camera_id is not None:
             camera_id = int(camera_id)
             if camera_id not in config.get_camera_ids():
@@ -978,8 +976,7 @@ class PictureHandler(BaseHandler):
         else:
             raise HTTPError(400, 'unknown operation')
 
-    @asynchronous
-    def post(self, camera_id, op, filename=None, group=None):
+    async def post(self, camera_id, op, filename=None, group=None):
         if group == '/':  # ungrouped
             group = ''
 
@@ -1435,8 +1432,7 @@ class MovieHandler(BaseHandler):
     def data_received(self, chunk):
         pass
 
-    @asynchronous
-    def get(self, camera_id, op, filename=None):
+    async def get(self, camera_id, op, filename=None):
         if camera_id is not None:
             camera_id = int(camera_id)
             if camera_id not in config.get_camera_ids():
@@ -1451,8 +1447,7 @@ class MovieHandler(BaseHandler):
         else:
             raise HTTPError(400, 'unknown operation')
 
-    @asynchronous
-    def post(self, camera_id, op, filename=None, group=None):
+    async def post(self, camera_id, op, filename=None, group=None):
         if group == '/':  # ungrouped
             group = ''
 
@@ -1606,9 +1601,8 @@ class MoviePlaybackHandler(StaticFileHandler, BaseHandler):
     if not os.path.exists(tmpdir):
         os.mkdir(tmpdir)
 
-    @asynchronous
     @BaseHandler.auth()
-    def get(self, camera_id, filename=None, include_body=True):
+    async def get(self, camera_id, filename=None, include_body=True):
         logging.debug('downloading movie %(filename)s of camera %(id)s' % {
             'filename': filename, 'id': camera_id})
 
@@ -1687,8 +1681,7 @@ class MovieDownloadHandler(MoviePlaybackHandler):
 
 
 class ActionHandler(BaseHandler):
-    @asynchronous
-    def post(self, camera_id, action):
+    async def post(self, camera_id, action):
         camera_id = int(camera_id)
         if camera_id not in config.get_camera_ids():
             raise HTTPError(404, 'no such camera')
@@ -1888,7 +1881,7 @@ class UpdateHandler(BaseHandler):
         versions = update.get_all_versions()
         current_version = update.get_os_version()[1]  # os version is returned as (name, version) tuple
         recent_versions = [v for v in versions if update.compare_versions(v, current_version) > 0]
-        recent_versions.sort(cmp=update.compare_versions)
+        recent_versions.sort(key=update.version_int)
         update_version = recent_versions[-1] if recent_versions else None
 
         self.finish_json({

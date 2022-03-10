@@ -59,40 +59,30 @@ def _get_os_version_uname():
 
 
 def compare_versions(version1, version2):
-    version1 = re.sub('[^0-9.]', '', version1)
-    version2 = re.sub('[^0-9.]', '', version2)
-    
-    def int_or_0(n):
-        try:
-            return int(n)
-        
-        except:
-            return 0
+    version1 = version_int(version1)
+    version2 = version_int(version2)
 
-    version1 = [int_or_0(n) for n in version1.split('.')]
-    version2 = [int_or_0(n) for n in version2.split('.')]
-    
-    len1 = len(version1)
-    len2 = len(version2)
-    length = min(len1, len2)
-    for i in range(length):
-        p1 = version1[i]
-        p2 = version2[i]
-        
-        if p1 < p2:
-            return -1
-        
-        elif p1 > p2:
-            return 1
-    
-    if len1 < len2:
+    if version1 < version2:
         return -1
-    
-    elif len1 > len2:
+
+    elif version1 > version2:
         return 1
-    
+
     else:
         return 0
+
+
+def version_int(e):
+    e = re.sub('[^0-9.]', '', e)
+    segs = e.split('.')
+    if len(segs) > 3:  # invalid format
+        return 0
+    out = ''
+    for seg in segs:
+        for i in range(len(seg), 3):
+            seg = '0' + seg
+        out += seg
+    return out
 
 
 def get_all_versions():
@@ -119,4 +109,3 @@ def perform_update(version):
     # schedule the actual update for two seconds later,
     # since we want to be able to respond to the request right away
     ioloop.IOLoop.instance().call_later(2, platformupdate.perform_update, version=version)
-
